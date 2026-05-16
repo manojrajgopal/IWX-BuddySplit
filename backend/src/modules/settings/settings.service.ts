@@ -42,11 +42,11 @@ export class SettingsService {
   async upsert(key: string, value: unknown, opts: { isPublic?: boolean; groupName?: string | null; updatedBy?: string | null } = {}): Promise<void> {
     await this.repo.upsert(
       {
-        key, value: value as never,
+        key, value,
         isPublic: opts.isPublic ?? true,
         groupName: opts.groupName ?? null,
         updatedBy: opts.updatedBy ?? null,
-      } as SiteSettingEntity,
+      } as any,
       ['key'],
     );
     this.cache.invalidateTag(CACHE_TAG);

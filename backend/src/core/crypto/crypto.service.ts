@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { createHash, createHmac, randomBytes } from 'crypto';
+import {
+  createHash, createHmac, randomBytes,
+  createCipheriv, createDecipheriv, scryptSync,
+} from 'crypto';
 import * as argon2 from 'argon2';
 
 @Injectable()
@@ -39,5 +42,37 @@ export class CryptoService {
 
   generateUrlToken(bytes = 32): string {
     return randomBytes(bytes).toString('base64url');
+  }
+
+  // ── AES-256-GCM symmetric encryption for at-rest secrets ────────────────
+  private encKey(): Buffer {
+    const secret = process.env.ENC_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'dev-only-secret-change-me';
+    return scryptSync(secret, 'iwx-buddysplit:enc:v1', 32);
+  }
+
+  encryptJson(value: unknown): string {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', this.encKey(), iv);
+    const plain = Buffer.from(JSON.stringify(value ?? null), 'utf8');
+    const enc = Buffer.concat([cipher.update(plain), cipher.final()]);
+    const tag = cipher.getAuthTag();
+    return `v1:${iv.toString('base64')}:${tag.toString('base64')}:${enc.toString('base64')}`;
+  }
+
+  decryptJson<T = unknown>(payload: string | null | undefined): T | null {
+    if (!payload) return null;
+    const parts = payload.split(':');
+    if (parts.length !== 4 || parts[0] !== 'v1') return null;
+    try {
+      const iv = Buffer.from(parts[1], 'base64');
+      const tag = Buffer.from(parts[2], 'base64');
+      const enc = Buffer.from(parts[3], 'base64');
+      const decipher = createDecipheriv('aes-256-gcm', this.encKey(), iv);
+      decipher.setAuthTag(tag);
+      const plain = Buffer.concat([decipher.update(enc), decipher.final()]).toString('utf8');
+      return JSON.parse(plain) as T;
+    } catch {
+      return null;
+    }
   }
 }

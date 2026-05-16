@@ -22,6 +22,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { BrandingModule } from './modules/branding/branding.module';
 import { NavigationModule } from './modules/navigation/navigation.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -31,7 +32,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     AppConfigModule, DatabaseModule, CacheModule, CryptoModule, MailModule, RealtimeModule,
     UsersModule, OtpModule, AuthModule, InvitationsModule, WorkspacesModule, MembersModule,
     ExpensesModule, SettlementsModule, NotificationsModule, EmailModule,
-    SettingsModule, BrandingModule, NavigationModule, AdminModule,
+    SettingsModule, BrandingModule, NavigationModule, AdminModule, RolesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

@@ -36,12 +36,19 @@ export const envSchema = z.object({
   OTP_LENGTH: Int(6),
   PASSWORD_PEPPER: z.string().min(8),
 
-  SMTP_HOST: z.string(),
-  SMTP_PORT: Int(1025),
-  SMTP_SECURE: Bool.default(false),
-  SMTP_USER: z.string().optional().default(''),
-  SMTP_PASSWORD: z.string().optional().default(''),
-  MAIL_FROM: z.string(),
+  /** Optional symmetric encryption secret for at-rest secrets (email account configs, etc.).
+   *  If unset, falls back to JWT_ACCESS_SECRET. Recommended in production. */
+  ENC_SECRET: z.string().min(32).optional(),
+
+  /* Legacy SMTP_* vars are deprecated — email accounts are now managed in the Admin Portal
+   * (table `email_accounts`). These remain accepted but unused so existing deployments
+   * don't break on boot. */
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: Int(1025).optional(),
+  SMTP_SECURE: Bool.optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  MAIL_FROM: z.string().optional(),
 
   CORS_ORIGINS: z.string().default(''),
   SOCKET_PATH: z.string().default('/realtime'),

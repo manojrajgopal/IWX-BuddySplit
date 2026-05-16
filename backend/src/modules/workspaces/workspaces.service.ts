@@ -2,7 +2,7 @@ import {
   BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { WorkspaceEntity, WorkspaceKind, WorkspaceStatus } from './entities/workspace.entity';
 import { WorkspaceMemberEntity } from '@/modules/members/entities/workspace-member.entity';
 import { RealtimeGateway } from '@/core/realtime/realtime.gateway';
@@ -95,7 +95,7 @@ export class WorkspacesService {
     return fresh;
   }
 
-  private async uniqueSlug(name: string, tx: { getRepository: typeof this.workspaces.manager.getRepository }): Promise<string> {
+  private async uniqueSlug(name: string, tx: EntityManager): Promise<string> {
     const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 48) || 'workspace';
     let slug = base;
     let i = 0;

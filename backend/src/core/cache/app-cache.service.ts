@@ -10,7 +10,7 @@ import { LRUCache } from 'lru-cache';
  */
 @Injectable()
 export class AppCache {
-  private readonly store: LRUCache<string, unknown>;
+  private readonly store: LRUCache<string, {}>;
   private readonly tagIndex = new Map<string, Set<string>>(); // tag → set of keys
 
   constructor() {

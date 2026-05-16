@@ -34,3 +34,5 @@ logs/
 # Local data
 storage/
 uploads/
+
+Secret.txt

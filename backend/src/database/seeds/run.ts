@@ -59,7 +59,7 @@ async function main(): Promise<void> {
   ];
   for (const [key, value] of publicSettings) {
     await settings.upsert(
-      { key, value: value as never, isPublic: true } as SiteSettingEntity,
+      { key, value, isPublic: true } as any,
       ['key'],
     );
   }
@@ -70,6 +70,8 @@ async function main(): Promise<void> {
     { location: 'primary', label: 'Workspaces', href: '/workspaces', sortOrder: 20, visible: true },
     { location: 'primary', label: 'Settings',   href: '/settings',   sortOrder: 90, visible: true },
     { location: 'admin',   label: 'Admin',      href: '/admin',      sortOrder: 10, visible: true, requiresRole: 'admin' },
+    { location: 'admin',   label: 'Email accounts', href: '/admin/email-accounts', sortOrder: 20, visible: true, requiresRole: 'admin' },
+    { location: 'admin',   label: 'Roles & access',  href: '/admin/roles',          sortOrder: 30, visible: true, requiresRole: 'admin' },
     { location: 'footer',  label: 'Privacy',    href: '/privacy',    sortOrder: 10, visible: true },
     { location: 'footer',  label: 'Terms',      href: '/terms',      sortOrder: 20, visible: true },
     { location: 'footer',  label: 'Contact',    href: '/contact',    sortOrder: 30, visible: true },

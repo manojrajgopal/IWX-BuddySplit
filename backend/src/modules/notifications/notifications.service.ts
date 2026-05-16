@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { NotificationEntity, NotificationKind } from './entities/notification.entity';
 import { RealtimeGateway } from '@/core/realtime/realtime.gateway';
 
@@ -57,6 +57,6 @@ export class NotificationsService {
   }
 
   async unreadCount(userId: string): Promise<number> {
-    return this.repo.count({ where: { userId, readAt: null } });
+    return this.repo.count({ where: { userId, readAt: IsNull() } });
   }
 }
