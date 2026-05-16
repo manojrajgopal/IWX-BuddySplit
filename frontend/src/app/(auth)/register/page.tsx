@@ -10,16 +10,23 @@ export default function RegisterPage(): JSX.Element {
   const [step, setStep] = useState<Step>('details');
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function requestOtp(e: FormEvent): Promise<void> {
     e.preventDefault();
-    setError(null); setBusy(true);
+    setError(null);
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    setBusy(true);
     try {
-      await apiClient('/v1/auth/register/request', { method: 'POST', body: { email, displayName, password } });
+      await apiClient('/v1/auth/register/request', { method: 'POST', body: { email } });
       setStep('verify');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
@@ -32,7 +39,7 @@ export default function RegisterPage(): JSX.Element {
     try {
       const res = await apiClient<{ accessToken: string; refreshToken: string }>(
         '/v1/auth/register/verify',
-        { method: 'POST', body: { email, code } },
+        { method: 'POST', body: { email, code, displayName, password, confirmPassword, phone: phone || undefined } },
       );
       await fetch('/api/auth/session', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(res) });
       router.push('/dashboard'); router.refresh();
@@ -47,7 +54,7 @@ export default function RegisterPage(): JSX.Element {
         {step === 'details' ? (
           <>
             <h2 className="card__title">Create your account</h2>
-            <p className="card__subtitle">We'll send a verification code to your email</p>
+            <p className="card__subtitle">We&apos;ll send a verification code to your email</p>
             <form onSubmit={requestOtp}>
               <div className="field">
                 <label className="label">Display name</label>
@@ -58,8 +65,16 @@ export default function RegisterPage(): JSX.Element {
                 <input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <div className="field">
+                <label className="label">Phone number</label>
+                <input className="input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" />
+              </div>
+              <div className="field">
                 <label className="label">Password</label>
                 <input className="input" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+              </div>
+              <div className="field">
+                <label className="label">Confirm password</label>
+                <input className="input" type="password" required minLength={8} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
               </div>
               {error && <div className="field__error">{error}</div>}
               <button className="btn btn--primary" type="submit" disabled={busy} style={{ width: '100%' }}>

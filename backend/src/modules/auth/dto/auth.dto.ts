@@ -10,6 +10,11 @@ export const RegisterVerifySchema = z.object({
   code: z.string().regex(/^\d{4,8}$/),
   displayName: z.string().min(1).max(80),
   password: z.string().min(8).max(128),
+  confirmPassword: z.string().min(8).max(128),
+  phone: z.string().min(7).max(20).optional(),
+}).refine((d) => d.password === d.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 });
 export type RegisterVerifyDto = z.infer<typeof RegisterVerifySchema>;
 

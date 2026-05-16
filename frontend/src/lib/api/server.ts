@@ -21,7 +21,8 @@ export async function apiServer<T>(path: string, opts: ApiOptions = {}): Promise
   const url = `${BASE}/api${path.startsWith('/') ? path : '/' + path}`;
   const headers: Record<string, string> = { 'content-type': 'application/json' };
   if (opts.withAuth !== false) {
-    const token = cookies().get(process.env.SESSION_COOKIE_NAME || 'bs_session')?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get(process.env.SESSION_COOKIE_NAME || 'bs_session')?.value;
     if (token) headers.authorization = `Bearer ${token}`;
   }
   const res = await fetch(url, {

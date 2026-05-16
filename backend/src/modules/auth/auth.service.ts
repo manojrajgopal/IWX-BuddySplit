@@ -35,6 +35,7 @@ export class AuthService {
       email: dto.email.toLowerCase(),
       displayName: dto.displayName,
       passwordHash,
+      phone: dto.phone ?? null,
     });
     return { userId: user.id };
   }

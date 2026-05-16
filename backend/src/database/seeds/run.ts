@@ -1,6 +1,8 @@
 import 'reflect-metadata';
 import { config as loadEnv } from 'dotenv';
-loadEnv();
+import { resolve } from 'path';
+loadEnv({ path: resolve(__dirname, '..', '..', '.env') });
+loadEnv({ path: resolve(__dirname, '..', '..', '.env.local'), override: true });
 
 import { AppDataSource } from '../data-source';
 import { UserEntity } from '@/modules/users/entities/user.entity';
@@ -20,9 +22,9 @@ async function main(): Promise<void> {
 
   // ── admin user ──────────────────────────────────────────────────────────
   const adminEmail = 'admin@buddysplit.local';
+  const passwordHash = await argon2.hash('admin123!' + (process.env.PASSWORD_PEPPER ?? ''), { type: argon2.argon2id });
   let admin = await users.findOne({ where: { email: adminEmail } });
   if (!admin) {
-    const passwordHash = await argon2.hash('admin123!' + (process.env.PASSWORD_PEPPER ?? ''), { type: argon2.argon2id });
     admin = await users.save(users.create({
       email: adminEmail,
       displayName: 'Admin',
@@ -33,6 +35,10 @@ async function main(): Promise<void> {
     }));
     // eslint-disable-next-line no-console
     console.log(`Seeded admin: ${adminEmail} / admin123!`);
+  } else {
+    await users.update({ id: admin.id }, { passwordHash });
+    // eslint-disable-next-line no-console
+    console.log(`Updated admin password hash for: ${adminEmail}`);
   }
 
   // ── site settings (public) ──────────────────────────────────────────────

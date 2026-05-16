@@ -3,7 +3,8 @@ import { cookies } from 'next/headers';
 import { SESSION_COOKIE, REFRESH_COOKIE } from '@/lib/auth/session';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const refreshToken = cookies().get(REFRESH_COOKIE)?.value;
+  const cookieStore = await cookies();
+  const refreshToken = cookieStore.get(REFRESH_COOKIE)?.value;
   if (refreshToken) {
     await fetch(`${process.env.INTERNAL_API_URL || 'http://localhost:4000'}/api/v1/auth/logout`, {
       method: 'POST',

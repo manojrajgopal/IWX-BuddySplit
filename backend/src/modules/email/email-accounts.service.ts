@@ -62,7 +62,7 @@ export class EmailAccountsService {
     });
     const saved = await this.ds.transaction(async (m) => {
       if (entity.isDefault) {
-        await m.update(EmailAccountEntity, {}, { isDefault: false });
+        await m.update(EmailAccountEntity, { isDefault: true }, { isDefault: false });
       }
       return m.save(entity);
     });
@@ -95,7 +95,7 @@ export class EmailAccountsService {
 
     const saved = await this.ds.transaction(async (m) => {
       if (dto.isDefault === true) {
-        await m.update(EmailAccountEntity, {}, { isDefault: false });
+        await m.update(EmailAccountEntity, { isDefault: true }, { isDefault: false });
         row.isDefault = true;
       } else if (dto.isDefault === false) {
         row.isDefault = false;
@@ -118,7 +118,7 @@ export class EmailAccountsService {
     const row = await this.repo.findOne({ where: { id } });
     if (!row) throw new NotFoundException('Email account not found');
     await this.ds.transaction(async (m) => {
-      await m.update(EmailAccountEntity, {}, { isDefault: false });
+      await m.update(EmailAccountEntity, { isDefault: true }, { isDefault: false });
       await m.update(EmailAccountEntity, { id }, { isDefault: true, isActive: true });
     });
     this.emitChange();

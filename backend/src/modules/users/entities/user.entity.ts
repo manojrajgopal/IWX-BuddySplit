@@ -17,6 +17,7 @@ export class UserEntity {
   passwordHash: string | null;
 
   @Column({ name: 'display_name', type: 'text' }) displayName: string;
+  @Column({ type: 'text', nullable: true }) phone: string | null;
   @Column({ name: 'avatar_url', type: 'text', nullable: true }) avatarUrl: string | null;
 
   @Column({ type: 'text', default: 'user' }) role: 'user' | 'admin';

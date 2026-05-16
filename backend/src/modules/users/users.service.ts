@@ -18,7 +18,7 @@ export class UsersService {
   }
 
   async createVerified(input: {
-    email: string; displayName: string; passwordHash: string;
+    email: string; displayName: string; passwordHash: string; phone?: string | null;
   }): Promise<UserEntity> {
     const existing = await this.findByEmail(input.email);
     if (existing) throw new ConflictException('Email already registered');
@@ -26,6 +26,7 @@ export class UsersService {
       email: input.email,
       displayName: input.displayName,
       passwordHash: input.passwordHash,
+      phone: input.phone ?? null,
       emailVerifiedAt: new Date(),
       role: 'user',
       status: 'active',

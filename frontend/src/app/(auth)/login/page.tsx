@@ -1,7 +1,7 @@
 'use client';
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiClient } from '@/lib/api/client';
+import { apiClient, clearTokenCache } from '@/lib/api/client';
 
 export default function LoginPage(): JSX.Element {
   const router = useRouter();
@@ -25,6 +25,7 @@ export default function LoginPage(): JSX.Element {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(res),
       });
+      clearTokenCache();
       router.push('/dashboard');
       router.refresh();
     } catch (err) {

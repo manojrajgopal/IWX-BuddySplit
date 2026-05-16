@@ -3,11 +3,11 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
+import { SetMetadata } from '@nestjs/common';
 import { Request } from 'express';
 
 export const PUBLIC_KEY = 'is_public_route';
-export const Public = (): MethodDecorator & ClassDecorator =>
-  Reflect.metadata(PUBLIC_KEY, true);
+export const Public = () => SetMetadata(PUBLIC_KEY, true);
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {

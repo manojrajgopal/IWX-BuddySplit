@@ -13,7 +13,7 @@ export default async function DashboardPage(): Promise<JSX.Element> {
   const session = await getSession();
   if (!session) redirect('/login');
 
-  const summary = await apiServer<DashboardSummary>('/v1/dashboard/summary', { revalidate: false, throwOnError: false }).catch(() => ({ workspaces: [], unreadNotifications: 0 } as DashboardSummary));
+  const summary = await apiServer<DashboardSummary>('/v1/dashboard/summary', { revalidate: false, throwOnError: false }).catch(() => null) ?? { workspaces: [], unreadNotifications: 0 } as DashboardSummary;
 
   return (
     <AppShell>
