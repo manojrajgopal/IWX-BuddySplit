@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: iwx-bs-postgres
+    environment:
+      POSTGRES_USER: buddysplit
+      POSTGRES_PASSWORD: buddysplit
+      POSTGRES_DB: buddysplit
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U buddysplit -d buddysplit"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # MailHog: free, local SMTP sink. UI at http://localhost:8025
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: iwx-bs-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  pgdata:

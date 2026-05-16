@@ -1,0 +1,16 @@
+{
+  "name": "iwx-buddysplit",
+  "private": true,
+  "version": "0.1.0",
+  "description": "IWX-BuddySplit — real-time expense sharing and settlement platform.",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "dev:backend": "npm --workspace backend run start:dev",
+    "dev:frontend": "npm --workspace frontend run dev"
+  }
+}
