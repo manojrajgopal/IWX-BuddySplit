@@ -1,7 +1,7 @@
 'use client';
 import { FormEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { apiClient, clearTokenCache } from '@/lib/api/client';
 import { AuthField, AuthInput } from '@/components/auth/AuthField';
 import { OtpGrid } from '@/components/auth/OtpGrid';
@@ -12,7 +12,7 @@ import {
 } from '@/components/auth/Icons';
 import { evaluatePassword, generatePassword } from '@/lib/password';
 
-type StepKey = 'identity' | 'security' | 'verify';
+type StepKey = 'identity' | 'security' | 'verify' | 'success';
 
 const STEP_DEFS: Array<{ key: StepKey; label: string; icon: JSX.Element }> = [
   { key: 'identity', label: 'Identity', icon: <IconUser size={14} /> },
@@ -22,6 +22,8 @@ const STEP_DEFS: Array<{ key: StepKey; label: string; icon: JSX.Element }> = [
 
 export function RegisterForm(): JSX.Element {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams?.get('next') || '/dashboard';
   const [step, setStep] = useState<StepKey>('identity');
 
   const [displayName, setDisplayName] = useState('');
@@ -92,8 +94,11 @@ export function RegisterForm(): JSX.Element {
         body: JSON.stringify(res),
       });
       clearTokenCache();
-      router.push('/dashboard');
-      router.refresh();
+      setStep('success');
+      setTimeout(() => {
+        router.push(nextUrl);
+        router.refresh();
+      }, 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed. Please check your code and try again.');
     } finally { setBusy(false); }
@@ -116,16 +121,18 @@ export function RegisterForm(): JSX.Element {
       onSubmit={step === 'identity' ? submitIdentity : step === 'security' ? submitSecurity : submitVerify}
       noValidate
     >
-      <div className="auth__form-head">
-        <span className="auth__form-icon"><IconUserPlus size={20} /></span>
-        <h2>Create your account</h2>
-        <p className="auth__form-sub">
-          Join a community that values privacy, exact math, and real connections. Set up takes under a minute — no credit card required.
-        </p>
-      </div>
+      {step !== 'success' && (
+        <div className="auth__form-head">
+          <span className="auth__form-icon"><IconUserPlus size={20} /></span>
+          <h2>Create your account</h2>
+          <p className="auth__form-sub">
+            Join a community that values privacy, exact math, and real connections. Set up takes under a minute — no credit card required.
+          </p>
+        </div>
+      )}
 
       {/* Step indicator */}
-      <div className="auth-steps" aria-label="Sign-up progress">
+      {step !== 'success' && <div className="auth-steps" aria-label="Sign-up progress">
         {STEP_DEFS.map((s, i) => {
           const status = i < stepIndex ? 'done' : i === stepIndex ? 'active' : 'pending';
           return (
@@ -136,7 +143,7 @@ export function RegisterForm(): JSX.Element {
             </div>
           );
         })}
-      </div>
+      </div>}
 
       {error && (
         <div className="auth-alert auth-alert--error" role="alert">
@@ -261,6 +268,23 @@ export function RegisterForm(): JSX.Element {
         </>
       )}
 
+      {step === 'success' && (
+        <div className="auth-success">
+          <span className="auth-success__icon"><IconCheck size={32} /></span>
+          <h3 className="auth-success__title">Account created!</h3>
+          <p className="auth-success__text">
+            Welcome aboard, <strong>{displayName}</strong>. Redirecting you now…
+          </p>
+          <button
+            type="button"
+            className="auth-btn auth-btn--primary"
+            onClick={() => { router.push(nextUrl); router.refresh(); }}
+          >
+            Continue now <IconArrowRight size={16} />
+          </button>
+        </div>
+      )}
+
       {step === 'verify' && (
         <>
           <AuthField label="Verification code" hint={<>We sent a 6-digit code to <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>. It expires in 10 minutes.</>}>
@@ -285,10 +309,12 @@ export function RegisterForm(): JSX.Element {
         </>
       )}
 
-      <p className="auth-fineprint">
-        We use industry-standard Argon2id hashing, HMAC-SHA256 one-time codes, and rotating refresh tokens.
-        Your data lives in your own database — there are no third-party analytics or advertising trackers on this site.
-      </p>
+      {step !== 'success' && (
+        <p className="auth-fineprint">
+          We use industry-standard Argon2id hashing, HMAC-SHA256 one-time codes, and rotating refresh tokens.
+          Your data lives in your own database — there are no third-party analytics or advertising trackers on this site.
+        </p>
+      )}
     </form>
   );
 }

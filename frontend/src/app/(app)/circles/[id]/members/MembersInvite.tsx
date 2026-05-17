@@ -13,7 +13,7 @@ export function MembersInvite({ workspaceId }: { workspaceId: string }): JSX.Ele
   async function onSubmit(e: FormEvent): Promise<void> {
     e.preventDefault(); setError(null); setBusy(true);
     try {
-      await apiClient(`/v1/workspaces/${workspaceId}/invitations`, { method: 'POST', body: { email } });
+      await apiClient(`/v1/invitations/workspaces/${workspaceId}`, { method: 'POST', body: { email } });
       setEmail(''); setOpen(false); router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to invite');

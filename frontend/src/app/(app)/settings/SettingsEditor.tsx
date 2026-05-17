@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { apiClient } from '@/lib/api/client';
 
 interface Props {
   initialSettings: Record<string, unknown>;
@@ -36,16 +37,10 @@ export function SettingsEditor({ initialSettings }: Props): JSX.Element {
     let parsed: unknown = draft;
     try { parsed = JSON.parse(draft); } catch { /* keep as string */ }
     try {
-      const res = await fetch(`/api/backend/v1/settings/${encodeURIComponent(key)}`, {
+      await apiClient(`/v1/settings/${encodeURIComponent(key)}`, {
         method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ value: parsed }),
-        credentials: 'include',
+        body: { value: parsed },
       });
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error((json as { error?: { message?: string } })?.error?.message ?? `HTTP ${res.status}`);
-      }
       setSettings((prev) => ({ ...prev, [key]: parsed }));
       setEditing(null);
     } catch (err) {

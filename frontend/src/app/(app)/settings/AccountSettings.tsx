@@ -1,5 +1,6 @@
 'use client';
 import { useState, FormEvent } from 'react';
+import { apiClient } from '@/lib/api/client';
 
 interface UserProfile {
   id: string;
@@ -40,19 +41,15 @@ export function AccountSettings({ profile: initial }: Props): JSX.Element {
     setProfileBusy(true);
     setProfileMsg(null);
     try {
-      const res = await fetch('/api/backend/v1/users/me', {
+      const data = await apiClient<Partial<UserProfile>>('/v1/users/me', {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
+        body: {
           displayName: displayName || undefined,
           phone: phone || null,
           avatarUrl: avatarUrl || null,
-        }),
+        },
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((json as { error?: { message?: string } })?.error?.message ?? `HTTP ${res.status}`);
-      setProfile((p) => ({ ...p, ...(json as Partial<UserProfile>) }));
+      setProfile((p) => ({ ...p, ...data }));
       setProfileMsg({ type: 'ok', text: 'Profile updated.' });
     } catch (err) {
       setProfileMsg({ type: 'err', text: err instanceof Error ? err.message : 'Update failed' });
@@ -66,16 +63,10 @@ export function AccountSettings({ profile: initial }: Props): JSX.Element {
     setPwBusy(true);
     setPwMsg(null);
     try {
-      const res = await fetch('/api/backend/v1/users/me/change-password', {
+      await apiClient('/v1/users/me/change-password', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ currentPassword, newPassword, confirmNewPassword }),
+        body: { currentPassword, newPassword, confirmNewPassword },
       });
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error((json as { error?: { message?: string } })?.error?.message ?? `HTTP ${res.status}`);
-      }
       setPwMsg({ type: 'ok', text: 'Password changed successfully.' });
       setCurrentPassword('');
       setNewPassword('');

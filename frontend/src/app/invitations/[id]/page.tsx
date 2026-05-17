@@ -1,5 +1,6 @@
 import { AppShell } from '@/components/layout/AppShell';
 import { apiServer } from '@/lib/api/server';
+import { getSession } from '@/lib/auth/session';
 import { InvitationActions } from './InvitationActions';
 
 interface Invitation {
@@ -8,12 +9,18 @@ interface Invitation {
 }
 
 export default async function InvitationPage(
-  { params, searchParams }: { params: { id: string }; searchParams: { token?: string } },
+  { params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ token?: string }> },
 ): Promise<JSX.Element> {
-  const token = searchParams.token ?? '';
-  const inv = await apiServer<Invitation>(`/v1/invitations/${params.id}?token=${encodeURIComponent(token)}`, {
-    revalidate: false, withAuth: false, throwOnError: false,
-  }).catch(() => null);
+  const { id } = await params;
+  const { token = '' } = await searchParams;
+  const [inv, session] = await Promise.all([
+    apiServer<Invitation>(`/v1/invitations/${id}?token=${encodeURIComponent(token)}`, {
+      revalidate: false, withAuth: false, throwOnError: false,
+    }).catch(() => null),
+    getSession(),
+  ]);
+
+  const returnUrl = `/invitations/${id}?token=${encodeURIComponent(token)}`;
 
   return (
     <AppShell>
@@ -32,7 +39,14 @@ export default async function InvitationPage(
               <p className="text-muted" style={{ fontSize: '0.85rem' }}>Status: {inv.status} · Expires {new Date(inv.expiresAt).toLocaleString()}</p>
               <div className="divider" />
               {inv.status === 'pending' ? (
-                <InvitationActions invitationId={inv.id} token={token} />
+                <InvitationActions
+                  invitationId={inv.id}
+                  token={token}
+                  invitedEmail={inv.email}
+                  loggedIn={!!session}
+                  loggedInEmail={session?.email ?? null}
+                  returnUrl={returnUrl}
+                />
               ) : (
                 <p className="text-secondary">This invitation has already been {inv.status}.</p>
               )}

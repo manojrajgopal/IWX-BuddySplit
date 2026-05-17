@@ -1,15 +1,27 @@
 import { apiServer } from '@/lib/api/server';
 import { MembersInvite } from './MembersInvite';
 
-interface Member { userId: string; displayName: string; email: string; role: 'owner' | 'admin' | 'member'; joinedAt: string }
+interface ApiMember {
+  userId: string; role: string; joinedAt: string;
+  user: { displayName: string; email: string };
+}
+interface Member { userId: string; displayName: string; email: string; role: string; joinedAt: string }
 
-export default async function MembersPage({ params }: { params: { id: string } }): Promise<JSX.Element> {
-  const list = await apiServer<Member[]>(`/v1/workspaces/${params.id}/members`, { revalidate: false, throwOnError: false }).catch(() => [] as Member[]);
+export default async function MembersPage({ params }: { params: Promise<{ id: string }> }): Promise<JSX.Element> {
+  const { id } = await params;
+  const raw = await apiServer<ApiMember[]>(`/v1/workspaces/${id}/members`, { revalidate: false, throwOnError: false }).catch(() => null) ?? [] as ApiMember[];
+  const list: Member[] = (raw ?? []).map(m => ({
+    userId: m.userId,
+    displayName: m.user?.displayName ?? '',
+    email: m.user?.email ?? '',
+    role: m.role,
+    joinedAt: m.joinedAt,
+  }));
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h2 style={{ margin: 0 }}>Members</h2>
-        <MembersInvite workspaceId={params.id} />
+        <MembersInvite workspaceId={id} />
       </div>
       {list.length === 0 ? (
         <div className="empty-state">No members yet.</div>

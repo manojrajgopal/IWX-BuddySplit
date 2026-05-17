@@ -384,10 +384,10 @@
 
 /* OTP code grid */
 .otp-grid {
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem;
+  display: flex; gap: 0.5rem; max-width: 360px;
 }
 .otp-grid input {
-  height: 56px;
+  width: 48px; height: 56px; flex-shrink: 0;
   text-align: center;
   font-family: var(--font-mono);
   font-size: 1.5rem; font-weight: 700;
@@ -398,6 +398,30 @@
   transition: border-color var(--t-fast), background-color var(--t-fast);
 }
 .otp-grid input:focus { outline: none; border-color: var(--text-primary); background: var(--bg-surface); }
+
+/* Registration success screen */
+.auth-success {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 0.75rem; padding: 2rem 0;
+  animation: auth-success-in 0.5s ease-out;
+}
+@keyframes auth-success-in {
+  0%   { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.auth-success__icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+}
+.auth-success__title {
+  font-size: 1.35rem; font-weight: 700; margin: 0;
+  color: var(--text-primary);
+}
+.auth-success__text {
+  font-size: 0.9rem; color: var(--text-muted); margin: 0; line-height: 1.5;
+}
 
 /* Multi-step progress indicator */
 .auth-steps {

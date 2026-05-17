@@ -68,7 +68,7 @@ export function ExpenseForm({ workspaceId, currency, members }: Props): JSX.Elem
           splitConfig: buildSplit(),
         },
       });
-      router.push(`/workspaces/${workspaceId}/expenses`);
+      router.push(`/circles/${workspaceId}/expenses`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create expense');

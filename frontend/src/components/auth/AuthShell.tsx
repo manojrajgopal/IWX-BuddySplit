@@ -27,7 +27,7 @@ const STATS = [
 
 export async function AuthShell({ children, variant = 'login' }: Props): Promise<JSX.Element> {
   const [settings, brand] = await Promise.all([getPublicSettings(), getBranding()]);
-  const appName = settingString(settings, 'app.name', 'IWX-BuddySplit');
+  const appName = settingString(settings, 'app.name', 'IWX BuddySplit');
   const tagline = settingString(settings, 'app.tagline', 'Track every rupee. Settle every chain.');
   const logo = brand['logo'];
   const year = new Date().getFullYear();

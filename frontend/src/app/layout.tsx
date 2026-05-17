@@ -1,13 +1,14 @@
 import '@/styles/globals.css';
 import '@/styles/components.css';
 import '@/styles/auth.css';
+import '@/styles/shell.css';
 import type { Metadata } from 'next';
 import { getBranding, getPublicSettings, settingString } from '@/lib/cms';
 
 export async function generateMetadata(): Promise<Metadata> {
   const [settings, brand] = await Promise.all([getPublicSettings(), getBranding()]);
   return {
-    title: { default: settingString(settings, 'app.name', 'IWX-BuddySplit'), template: `%s · ${settingString(settings, 'app.name', 'IWX-BuddySplit')}` },
+    title: { default: settingString(settings, 'app.name', 'IWX BuddySplit'), template: `%s · ${settingString(settings, 'app.name', 'IWX BuddySplit')}` },
     description: settingString(settings, 'app.description', 'Real-time expense sharing and settlement.'),
     icons: brand['favicon'] ? [{ rel: 'icon', url: brand['favicon'].url, type: brand['favicon'].mime }] : undefined,
   };

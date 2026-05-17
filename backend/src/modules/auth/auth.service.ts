@@ -28,7 +28,7 @@ export class AuthService {
     return this.otp.request(dto.email.toLowerCase(), 'register');
   }
 
-  async registerVerify(dto: RegisterVerifyDto): Promise<{ userId: string }> {
+  async registerVerify(dto: RegisterVerifyDto): Promise<TokenPair & { userId: string }> {
     await this.otp.verify(dto.email.toLowerCase(), 'register', dto.code);
     const passwordHash = await this.crypto.hashPassword(dto.password);
     const user = await this.users.createVerified({
@@ -37,7 +37,7 @@ export class AuthService {
       passwordHash,
       phone: dto.phone ?? null,
     });
-    return { userId: user.id };
+    return { ...(await this.issueTokens(user.id, user.email, user.role)), userId: user.id };
   }
 
   async login(dto: LoginDto, ua?: string, ip?: string): Promise<TokenPair & { userId: string }> {
