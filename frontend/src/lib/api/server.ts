@@ -25,12 +25,15 @@ export async function apiServer<T>(path: string, opts: ApiOptions = {}): Promise
     const token = cookieStore.get(process.env.SESSION_COOKIE_NAME || 'bs_session')?.value;
     if (token) headers.authorization = `Bearer ${token}`;
   }
+  const fetchOpts: RequestInit & { next?: { tags?: string[]; revalidate?: number | false } } =
+    opts.revalidate === false
+      ? { cache: 'no-store' }
+      : { next: { tags: opts.tags, revalidate: opts.revalidate ?? false } };
   const res = await fetch(url, {
     method: opts.method ?? 'GET',
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
     headers,
-    next: { tags: opts.tags, revalidate: opts.revalidate ?? false },
-    cache: opts.revalidate === false ? 'no-store' : 'force-cache',
+    ...fetchOpts,
   });
   const json = (await res.json().catch(() => ({}))) as ApiEnvelope<T> | undefined;
   if (!res.ok) {

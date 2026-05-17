@@ -1,5 +1,6 @@
 import '@/styles/globals.css';
 import '@/styles/components.css';
+import '@/styles/auth.css';
 import type { Metadata } from 'next';
 import { getBranding, getPublicSettings, settingString } from '@/lib/cms';
 

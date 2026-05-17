@@ -47,4 +47,8 @@ export class UsersService {
     if (!u) throw new NotFoundException('User not found');
     return u;
   }
+
+  save(entity: UserEntity): Promise<UserEntity> {
+    return this.users.save(entity);
+  }
 }

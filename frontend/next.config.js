@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  experimental: { typedRoutes: false },
+  typedRoutes: false,
   async rewrites() {
     return [
       {
