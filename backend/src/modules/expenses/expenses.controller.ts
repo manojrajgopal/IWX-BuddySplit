@@ -15,6 +15,11 @@ export class ExpensesController {
   @Get()
   list(@Param('workspaceId') wid: string) { return this.service.list(wid); }
 
+  @Get(':id')
+  detail(@Param('workspaceId') wid: string, @Param('id') id: string) {
+    return this.service.detail(wid, id);
+  }
+
   @Post()
   create(
     @CurrentUser() u: AuthUser,

@@ -2,6 +2,7 @@ import { apiServer } from '@/lib/api/server';
 import { ExpenseForm } from './ExpenseForm';
 
 interface ApiMember {
+  id: string;
   userId: string;
   user: { displayName: string };
 }
@@ -13,7 +14,7 @@ export default async function NewExpensePage({ params }: { params: Promise<{ id:
     apiServer<Workspace>(`/v1/workspaces/${id}`, { revalidate: false }),
     apiServer<ApiMember[]>(`/v1/workspaces/${id}/members`, { revalidate: false, throwOnError: false }).catch(() => null) ?? [] as ApiMember[],
   ]);
-  const members = (rawMembers ?? []).map(m => ({ userId: m.userId, displayName: m.user?.displayName ?? '' }));
+  const members = (rawMembers ?? []).map(m => ({ memberId: m.id, displayName: m.user?.displayName ?? '' }));
   return (
     <div>
       <h2 style={{ marginBottom: '1.5rem' }}>Add expense</h2>

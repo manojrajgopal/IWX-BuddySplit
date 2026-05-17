@@ -4,7 +4,7 @@ import { getSession } from '@/lib/auth/session';
 import { AppShell } from '@/components/layout/AppShell';
 import { apiServer } from '@/lib/api/server';
 
-interface Workspace { id: string; name: string; baseCurrency: string; status: string; kind: string; epoch: number }
+interface Workspace { id: string; name: string; baseCurrency: string; status: string; kind: string; epoch: number; memberCount: number }
 
 export default async function WorkspacesPage(): Promise<JSX.Element> {
   if (!(await getSession())) redirect('/login');
@@ -30,12 +30,12 @@ export default async function WorkspacesPage(): Promise<JSX.Element> {
             <thead><tr><th>Name</th><th>Kind</th><th>Members</th><th>Currency</th><th>Status</th></tr></thead>
             <tbody>
               {list.map((w) => (
-                <tr key={w.id} style={{ cursor: 'pointer' }}>
+                <tr key={w.id} className="table__row--link">
                   <td><Link href={`/circles/${w.id}`}>{w.name}</Link></td>
-                  <td className="text-secondary">{w.kind}</td>
-                  <td></td>
-                  <td className="text-mono">{w.baseCurrency}</td>
-                  <td><span className={'pill pill--' + (w.status === 'active' ? 'positive' : 'warning')}>{w.status}</span></td>
+                  <td><Link href={`/circles/${w.id}`} className="text-secondary" tabIndex={-1}>{w.kind}</Link></td>
+                  <td><Link href={`/circles/${w.id}`} tabIndex={-1}>{w.memberCount}</Link></td>
+                  <td><Link href={`/circles/${w.id}`} className="text-mono" tabIndex={-1}>{w.baseCurrency}</Link></td>
+                  <td><Link href={`/circles/${w.id}`} tabIndex={-1}><span className={'pill pill--' + (w.status === 'active' ? 'positive' : 'warning')}>{w.status}</span></Link></td>
                 </tr>
               ))}
             </tbody>

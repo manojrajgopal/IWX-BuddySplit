@@ -21,6 +21,7 @@ function buildGroups(isAdmin: boolean, unread: number): SidebarGroup[] {
       title: 'You',
       items: [
         { href: '/friends',       label: 'Friends',       icon: 'friends' },
+        { href: '/invitations',   label: 'Invitations',   icon: 'mail' },
         { href: '/notifications', label: 'Notifications', icon: 'bell', count: unread },
         { href: '/profile',       label: 'Profile',       icon: 'user' },
         { href: '/settings',      label: 'Settings',      icon: 'settings' },

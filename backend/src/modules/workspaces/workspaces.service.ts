@@ -57,14 +57,28 @@ export class WorkspacesService {
     });
   }
 
-  async listForUser(userId: string): Promise<WorkspaceEntity[]> {
-    return this.workspaces
+  async listForUser(userId: string): Promise<(WorkspaceEntity & { memberCount: number })[]> {
+    const rows = await this.workspaces
       .createQueryBuilder('w')
       .innerJoin(WorkspaceMemberEntity, 'm', 'm.workspace_id = w.id AND m.left_at IS NULL')
+      .addSelect((sub) =>
+        sub.select('COUNT(*)')
+          .from(WorkspaceMemberEntity, 'mc')
+          .where('mc.workspace_id = w.id')
+          .andWhere('mc.left_at IS NULL'),
+        'member_count',
+      )
       .where('m.user_id = :uid', { uid: userId })
       .andWhere('w.deleted_at IS NULL')
       .orderBy('w.updated_at', 'DESC')
-      .getMany();
+      .groupBy('w.id')
+      .getRawAndEntities();
+
+    const countMap = new Map<string, number>();
+    for (const raw of rows.raw) {
+      countMap.set(raw.w_id, parseInt(raw.member_count, 10) || 0);
+    }
+    return rows.entities.map((e) => Object.assign(e, { memberCount: countMap.get(e.id) ?? 0 }));
   }
 
   async getById(id: string): Promise<WorkspaceEntity> {

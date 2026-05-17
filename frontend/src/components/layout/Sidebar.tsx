@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { NavHome, NavCircles, NavActivity, NavReports, NavFriends, NavBell, NavSettings, NavShield, NavUser, NavHelp } from './Icons';
+import { NavHome, NavCircles, NavActivity, NavReports, NavFriends, NavBell, NavMail, NavSettings, NavShield, NavUser, NavHelp } from './Icons';
 
 export interface SidebarNavItem {
   href: string;
@@ -22,6 +22,7 @@ const ICONS = {
   activity: NavActivity,
   reports: NavReports,
   friends: NavFriends,
+  mail: NavMail,
   bell: NavBell,
   settings: NavSettings,
   shield: NavShield,

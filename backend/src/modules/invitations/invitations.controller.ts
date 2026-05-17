@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { InvitationsService } from './invitations.service';
 import { JwtAuthGuard, Public } from '@/common/guards/jwt-auth.guard';
 import { WorkspaceMemberGuard } from '@/common/guards/workspace-member.guard';
@@ -23,6 +23,12 @@ export class InvitationsController {
     });
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('mine')
+  mine(@CurrentUser() u: AuthUser) {
+    return this.service.listPendingForUser(u.id);
+  }
+
   @Public()
   @Get(':id')
   get(@Param('id') id: string, @Query('token') token: string) {
@@ -34,8 +40,20 @@ export class InvitationsController {
   accept(
     @CurrentUser() u: AuthUser,
     @Param('id') id: string,
-    @Body('token') token: string,
-  ) { return this.service.accept(id, token, u.id); }
+    @Body('token') token?: string,
+  ) {
+    if (token) return this.service.accept(id, token, u.id);
+    return this.service.acceptByUser(id, u.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/decline-auth')
+  declineAuth(
+    @CurrentUser() u: AuthUser,
+    @Param('id') id: string,
+  ) {
+    return this.service.declineByUser(id, u.id);
+  }
 
   @Public()
   @Post(':id/decline')

@@ -52,6 +52,33 @@ export class ExpensesService {
     return e;
   }
 
+  async detail(workspaceId: string, id: string) {
+    const e = await this.expenses.findOne({ where: { id, workspaceId, deletedAt: IsNull() } });
+    if (!e) throw new NotFoundException('Expense not found');
+    const splits = await this.splits.find({ where: { expenseId: id } });
+    const memberIds = [...new Set([e.payerMemberId, ...splits.map(s => s.memberId)])];
+    const memberRows = await this.members.find({ where: { workspaceId } });
+    const userIds = memberRows.filter(m => memberIds.includes(m.id)).map(m => m.userId);
+    // Resolve display names via a raw query on the users table.
+    const users: Array<{ id: string; display_name: string }> = userIds.length > 0
+      ? await this.ds.query(`SELECT id, display_name FROM users WHERE id = ANY($1)`, [userIds])
+      : [];
+    const userNameMap = new Map(users.map(u => [u.id, u.display_name]));
+    const memberNameMap = new Map(memberRows.map(m => [m.id, userNameMap.get(m.userId) ?? '']));
+    return {
+      ...e,
+      payerName: memberNameMap.get(e.payerMemberId) ?? '',
+      createdByName: memberNameMap.get(
+        memberRows.find(m => m.userId === e.createdBy)?.id ?? '',
+      ) ?? '',
+      splits: splits.map(s => ({
+        memberId: s.memberId,
+        memberName: memberNameMap.get(s.memberId) ?? '',
+        shareMinor: s.shareMinor,
+      })),
+    };
+  }
+
   async create(input: CreateExpenseInput): Promise<ExpenseEntity> {
     const ws = await this.workspaces.findOne({ where: { id: input.workspaceId } });
     if (!ws) throw new NotFoundException('Workspace not found');

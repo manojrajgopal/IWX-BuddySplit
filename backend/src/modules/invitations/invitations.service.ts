@@ -109,6 +109,41 @@ export class InvitationsService {
     await this.invites.update({ id: inv.id }, { status: 'declined', declinedAt: new Date() });
   }
 
+  async acceptByUser(invitationId: string, userId: string): Promise<{ workspaceId: string }> {
+    return this.ds.transaction(async (tx) => {
+      const inv = await tx.getRepository(InvitationEntity).findOne({ where: { id: invitationId } });
+      if (!inv) throw new NotFoundException();
+      if (inv.status !== 'pending') throw new BadRequestException(`Invitation is ${inv.status}`);
+      if (inv.expiresAt.getTime() < Date.now()) {
+        await tx.getRepository(InvitationEntity).update({ id: inv.id }, { status: 'expired' });
+        throw new BadRequestException('Invitation expired');
+      }
+      const user = await this.users.require(userId);
+      if (user.email.toLowerCase() !== inv.email.toLowerCase()) {
+        throw new ForbiddenException('Invitation belongs to a different email');
+      }
+      await this.memberSvc.addByUserId(inv.workspaceId, userId, inv.role);
+      await tx.getRepository(InvitationEntity).update({ id: inv.id }, {
+        status: 'accepted', acceptedAt: new Date(),
+      });
+      await this.realtime.emit(`workspace:${inv.workspaceId}`, 'workspace.member.changed', {
+        workspaceId: inv.workspaceId, userId, action: 'joined',
+      });
+      return { workspaceId: inv.workspaceId };
+    });
+  }
+
+  async declineByUser(invitationId: string, userId: string): Promise<void> {
+    const inv = await this.invites.findOne({ where: { id: invitationId } });
+    if (!inv) throw new NotFoundException();
+    if (inv.status !== 'pending') throw new BadRequestException();
+    const user = await this.users.require(userId);
+    if (user.email.toLowerCase() !== inv.email.toLowerCase()) {
+      throw new ForbiddenException('Invitation belongs to a different email');
+    }
+    await this.invites.update({ id: inv.id }, { status: 'declined', declinedAt: new Date() });
+  }
+
   async revoke(invitationId: string, byUserId: string): Promise<void> {
     const inv = await this.invites.findOne({ where: { id: invitationId } });
     if (!inv) throw new NotFoundException();
@@ -121,5 +156,33 @@ export class InvitationsService {
       where: { email: email.toLowerCase(), status: 'pending', expiresAt: MoreThan(new Date()) },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async listPendingForUser(userId: string): Promise<Array<{
+    id: string; workspaceId: string; workspaceName: string;
+    inviterName: string; role: string; email: string;
+    expiresAt: Date; createdAt: Date;
+  }>> {
+    const user = await this.users.require(userId);
+    const invites = await this.invites.find({
+      where: { email: user.email.toLowerCase(), status: 'pending', expiresAt: MoreThan(new Date()) },
+      order: { createdAt: 'DESC' },
+    });
+    return Promise.all(invites.map(async (inv) => {
+      const [ws, inviter] = await Promise.all([
+        this.workspaces.getById(inv.workspaceId).catch(() => null),
+        this.users.findById(inv.invitedBy),
+      ]);
+      return {
+        id: inv.id,
+        workspaceId: inv.workspaceId,
+        workspaceName: ws?.name ?? 'Unknown circle',
+        inviterName: inviter?.displayName ?? 'Someone',
+        role: inv.role,
+        email: inv.email,
+        expiresAt: inv.expiresAt,
+        createdAt: inv.createdAt,
+      };
+    }));
   }
 }

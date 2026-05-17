@@ -1,21 +1,31 @@
 import Link from 'next/link';
 import { apiServer } from '@/lib/api/server';
-import { formatMoney } from '@/lib/money/format';
+import { ExpenseTable } from './ExpenseTable';
 
 interface Expense {
   id: string;
   description: string;
-  amount: string;
+  totalMinor: string;
   currency: string;
-  payerName: string;
+  payerMemberId: string;
   splitMode: string;
   occurredAt: string;
 }
 
+interface Member {
+  id: string;
+  user: { displayName: string };
+}
+
 export default async function ExpensesPage({ params }: { params: Promise<{ id: string }> }): Promise<JSX.Element> {
   const { id } = await params;
-  const list = await apiServer<Expense[]>(`/v1/workspaces/${id}/expenses`, { revalidate: false, throwOnError: false })
-    .catch(() => [] as Expense[]);
+  const [list, members] = await Promise.all([
+    apiServer<Expense[]>(`/v1/workspaces/${id}/expenses`, { revalidate: false, throwOnError: false })
+      .catch(() => [] as Expense[]) ?? [],
+    apiServer<Member[]>(`/v1/workspaces/${id}/members`, { revalidate: false, throwOnError: false })
+      .catch(() => [] as Member[]) ?? [],
+  ]);
+  const nameMap = Object.fromEntries(members.map((m) => [m.id, m.user?.displayName ?? '']));
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
@@ -25,22 +35,7 @@ export default async function ExpensesPage({ params }: { params: Promise<{ id: s
       {list.length === 0 ? (
         <div className="empty-state">No expenses yet.</div>
       ) : (
-        <div className="card" style={{ padding: 0 }}>
-          <table className="table">
-            <thead><tr><th>Date</th><th>Description</th><th>Payer</th><th>Mode</th><th style={{ textAlign: 'right' }}>Amount</th></tr></thead>
-            <tbody>
-              {list.map((e) => (
-                <tr key={e.id}>
-                  <td className="text-secondary">{new Date(e.occurredAt).toLocaleDateString()}</td>
-                  <td>{e.description}</td>
-                  <td>{e.payerName}</td>
-                  <td><span className="pill">{e.splitMode}</span></td>
-                  <td className="text-mono" style={{ textAlign: 'right' }}>{formatMoney(e.amount, e.currency)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ExpenseTable workspaceId={id} expenses={list} nameMap={nameMap} />
       )}
     </div>
   );
