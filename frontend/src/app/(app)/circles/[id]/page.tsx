@@ -27,6 +27,7 @@ export default async function WorkspaceOverviewPage({ params }: { params: Promis
 
   return (
     <OverviewInteractive
+      workspaceId={id}
       expenseCount={expenseList.length}
       memberCount={memberList.length}
       totalSpend={totalSpend}

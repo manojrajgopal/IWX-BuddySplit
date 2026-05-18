@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { FloatingDetail } from './FloatingDetail';
 import { formatMoney } from '@/lib/money/format';
 
@@ -17,6 +18,7 @@ interface Transfer {
 }
 
 interface OverviewInteractiveProps {
+  workspaceId: string;
   expenseCount: number;
   memberCount: number;
   totalSpend: string;
@@ -27,6 +29,7 @@ interface OverviewInteractiveProps {
 }
 
 export function OverviewInteractive({
+  workspaceId,
   expenseCount,
   memberCount,
   totalSpend,
@@ -58,37 +61,41 @@ export function OverviewInteractive({
           </div>
         </FloatingDetail>
 
-        <FloatingDetail
-          detail={
-            <div>
-              <p className="fd-title">Expenses</p>
-              <div className="fd-row"><span className="fd-label">Count</span><span className="fd-value">{expenseCount}</span></div>
-              <div className="fd-row"><span className="fd-label">Total value</span><span className="fd-value">{formatMoney(totalSpend, currency)}</span></div>
-              <p className="fd-note">View the Expenses tab for individual details.</p>
+        <Link href={`/circles/${workspaceId}/expenses`} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <FloatingDetail
+            detail={
+              <div>
+                <p className="fd-title">Expenses</p>
+                <div className="fd-row"><span className="fd-label">Count</span><span className="fd-value">{expenseCount}</span></div>
+                <div className="fd-row"><span className="fd-label">Total value</span><span className="fd-value">{formatMoney(totalSpend, currency)}</span></div>
+                <p className="fd-note">Click to view all expenses.</p>
+              </div>
+            }
+          >
+            <div className="card card--hover">
+              <div className="text-uppercase-label">Expenses</div>
+              <h2 style={{ marginTop: '0.5rem' }}>{expenseCount}</h2>
             </div>
-          }
-        >
-          <div className="card">
-            <div className="text-uppercase-label">Expenses</div>
-            <h2 style={{ marginTop: '0.5rem' }}>{expenseCount}</h2>
-          </div>
-        </FloatingDetail>
+          </FloatingDetail>
+        </Link>
 
-        <FloatingDetail
-          detail={
-            <div>
-              <p className="fd-title">Members</p>
-              <div className="fd-row"><span className="fd-label">Active members</span><span className="fd-value">{memberCount}</span></div>
-              <div className="fd-row"><span className="fd-label">Avg spend per member</span><span className="fd-value">{memberCount > 0 ? formatMoney((BigInt(totalSpend) / BigInt(memberCount)).toString(), currency) : '—'}</span></div>
-              <p className="fd-note">View the Members tab for roles and details.</p>
+        <Link href={`/circles/${workspaceId}/members`} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <FloatingDetail
+            detail={
+              <div>
+                <p className="fd-title">Members</p>
+                <div className="fd-row"><span className="fd-label">Active members</span><span className="fd-value">{memberCount}</span></div>
+                <div className="fd-row"><span className="fd-label">Avg spend per member</span><span className="fd-value">{memberCount > 0 ? formatMoney((BigInt(totalSpend) / BigInt(memberCount)).toString(), currency) : '—'}</span></div>
+                <p className="fd-note">Click to view all members.</p>
+              </div>
+            }
+          >
+            <div className="card card--hover">
+              <div className="text-uppercase-label">Members</div>
+              <h2 style={{ marginTop: '0.5rem' }}>{memberCount}</h2>
             </div>
-          }
-        >
-          <div className="card">
-            <div className="text-uppercase-label">Members</div>
-            <h2 style={{ marginTop: '0.5rem' }}>{memberCount}</h2>
-          </div>
-        </FloatingDetail>
+          </FloatingDetail>
+        </Link>
       </div>
 
       {/* Net balances table */}
