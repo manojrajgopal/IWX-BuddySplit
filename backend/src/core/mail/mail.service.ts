@@ -96,8 +96,11 @@ export class MailService {
       this.logger.log(`sent[${opts.templateKey}] via ${resolved.entity.name} → ${opts.to}`);
     } catch (err) {
       const message = (err as Error).message;
+      const transportOpts = (resolved.transporter as unknown as { options?: { host?: string; port?: number } }).options ?? {};
+      const where = transportOpts.host ? ` (host=${transportOpts.host}:${transportOpts.port ?? '?'})` : '';
       await this.accounts.recordSend(resolved.entity.id, message);
       this.cache.delete(resolved.entity.id);
+      this.logger.error(`send[${opts.templateKey}] failed via ${resolved.entity.name}${where}: ${message}`);
       throw err;
     }
   }
@@ -162,15 +165,33 @@ export class MailService {
     config: Record<string, unknown>,
   ): Promise<ResolvedAccount> {
     let transporter: Transporter;
+    // Render (and most managed hosts) sometimes have unreliable IPv6 routing to
+    // SMTP relays; forcing IPv4 plus explicit timeouts avoids indefinite hangs
+    // surfacing as "Connection timeout" with no further context.
+    const commonOpts = {
+      family: 4 as const,
+      connectionTimeout: 15_000,
+      greetingTimeout: 15_000,
+      socketTimeout: 30_000,
+    };
     if (entity.provider === 'smtp') {
-      const host = String(config.host ?? '');
-      const port = Number(config.port ?? 587);
-      const secure = Boolean(config.secure);
+      const host = String(config.host ?? '').trim();
+      const rawPort = Number(config.port ?? 587);
+      const port = Number.isFinite(rawPort) && rawPort > 0 ? rawPort : 587;
+      // Auto-reconcile secure flag with the chosen port: 465 must be TLS-on-connect,
+      // 587/2525/25 are STARTTLS (secure=false). Misconfiguration here is the #1
+      // source of "Connection timeout" errors against Gmail/SES/Mailgun.
+      const secure = port === 465 ? true : Boolean(config.secure) && port !== 587 && port !== 2525 && port !== 25;
       const user = String(config.user ?? '');
       const pass = String(config.password ?? '');
       transporter = createTransport({
-        host, port, secure,
+        host,
+        port,
+        secure,
+        requireTLS: !secure,
         auth: user ? { user, pass } : undefined,
+        tls: { servername: host },
+        ...commonOpts,
       });
     } else {
       const user = extractEmail(entity.fromAddress);
@@ -184,6 +205,7 @@ export class MailService {
           refreshToken: String(config.refreshToken ?? ''),
           accessToken: String(config.accessToken ?? '') || undefined,
         },
+        ...commonOpts,
       });
     }
     return { entity, transporter, from: entity.fromAddress };
