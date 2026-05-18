@@ -6,6 +6,7 @@ import { apiClient, clearTokenCache } from '@/lib/api/client';
 import { AuthField, AuthInput } from '@/components/auth/AuthField';
 import { OtpGrid } from '@/components/auth/OtpGrid';
 import { PasswordStrengthBlock } from '@/components/auth/PasswordStrengthBlock';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import {
   IconAlertCircle, IconArrowLeft, IconArrowRight, IconCheck, IconEye,
   IconEyeOff, IconLock, IconMail, IconSparkle, IconUser, IconUserPlus, IconX,
@@ -154,6 +155,8 @@ export function RegisterForm(): JSX.Element {
 
       {step === 'identity' && (
         <>
+          <GoogleSignInButton text="signup_with" context="signup" />
+
           <AuthField label="Display name" htmlFor="reg-name" hint="Shown on your workspace dashboards and split lists. You can change this later.">
             <AuthInput
               id="reg-name" type="text" autoComplete="name" required autoFocus

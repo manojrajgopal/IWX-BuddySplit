@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api/client';
 import { clearTokenCache } from '@/lib/api/client';
 import { AuthField, AuthInput } from '@/components/auth/AuthField';
 import { AuthTrust } from '@/components/auth/AuthTrust';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import {
   IconAlertCircle, IconArrowRight, IconCheck, IconEye, IconEyeOff,
   IconLock, IconMail, IconUserPlus,
@@ -62,6 +63,8 @@ export function LoginForm(): JSX.Element {
           <span>{error}</span>
         </div>
       )}
+
+      <GoogleSignInButton text="signin_with" context="signin" />
 
       <AuthField label="Email address" htmlFor="login-email">
         <AuthInput

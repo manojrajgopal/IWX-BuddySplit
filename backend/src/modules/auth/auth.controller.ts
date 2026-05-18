@@ -3,9 +3,9 @@ import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
 import {
-  ForgotPasswordSchema, LoginSchema, RefreshSchema, RegisterRequestSchema,
+  ForgotPasswordSchema, GoogleSignInSchema, LoginSchema, RefreshSchema, RegisterRequestSchema,
   RegisterVerifySchema, ResetPasswordSchema,
-  type ForgotPasswordDto, type LoginDto, type RefreshDto, type RegisterRequestDto,
+  type ForgotPasswordDto, type GoogleSignInDto, type LoginDto, type RefreshDto, type RegisterRequestDto,
   type RegisterVerifyDto, type ResetPasswordDto,
 } from './dto/auth.dto';
 import { Public, JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
@@ -25,7 +25,8 @@ export class AuthController {
   @Post('register/verify')
   registerVerify(
     @Body(new ZodValidationPipe(RegisterVerifySchema)) dto: RegisterVerifyDto,
-  ) { return this.auth.registerVerify(dto); }
+    @Req() req: Request,
+  ) { return this.auth.registerVerify(dto, req.headers['user-agent'], req.ip); }
 
   @Public()
   @HttpCode(200)
@@ -35,6 +36,16 @@ export class AuthController {
     @Req() req: Request,
   ) {
     return this.auth.login(dto, req.headers['user-agent'], req.ip);
+  }
+
+  @Public()
+  @HttpCode(200)
+  @Post('google')
+  google(
+    @Body(new ZodValidationPipe(GoogleSignInSchema)) dto: GoogleSignInDto,
+    @Req() req: Request,
+  ) {
+    return this.auth.googleSignIn(dto, req.headers['user-agent'], req.ip);
   }
 
   @Public()

@@ -57,6 +57,10 @@ export const envSchema = z.object({
   LRU_TTL_MS: Int(60000),
 
   REVALIDATION_SECRET: z.string().min(16),
+
+  /** Google OAuth — set both to enable Google sign-in / sign-up.
+   *  Frontend uses NEXT_PUBLIC_GOOGLE_CLIENT_ID with the same value. */
+  GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

@@ -118,19 +118,24 @@ export function NavigationProvider({ children }: { children: ReactNode }): JSX.E
   }, [startNavigation]);
 
   // Also catch programmatic navigation via history (router.push, router.replace).
+  // State updates are deferred with queueMicrotask because Next.js 16 may call
+  // pushState/replaceState from within a useInsertionEffect, where React forbids
+  // scheduling state updates synchronously.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const { pushState, replaceState } = window.history;
 
     window.history.pushState = function (...args) {
-      startNavigation();
-      return pushState.apply(window.history, args as any);
+      const result = pushState.apply(window.history, args as any);
+      queueMicrotask(() => startNavigation());
+      return result;
     };
     window.history.replaceState = function (...args) {
-      startNavigation();
-      return replaceState.apply(window.history, args as any);
+      const result = replaceState.apply(window.history, args as any);
+      queueMicrotask(() => startNavigation());
+      return result;
     };
-    const onPop = () => startNavigation();
+    const onPop = () => queueMicrotask(() => startNavigation());
     window.addEventListener('popstate', onPop);
 
     return () => {

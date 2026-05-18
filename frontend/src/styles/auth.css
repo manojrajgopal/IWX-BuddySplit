@@ -455,3 +455,27 @@
 /* Tiny prose row for footer microcopy */
 .auth-fineprint { font-size: 0.72rem; line-height: 1.55; color: var(--text-muted); }
 .auth-fineprint a { color: var(--text-secondary); text-decoration: underline; }
+
+/* Google Identity Services button wrapper */
+.auth-google {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-bottom: 0.25rem;
+}
+.auth-google__btn {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  justify-content: center;
+}
+.auth-google__btn > div,
+.auth-google__btn iframe { margin: 0 auto !important; }
+.auth-google__status {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+.auth-google__status--error { color: var(--danger, #e63946); }
+

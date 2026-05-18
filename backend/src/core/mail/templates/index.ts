@@ -11,6 +11,8 @@ import { inviteTemplate } from './invite.template';
 import { expenseCreatedTemplate } from './expense-created.template';
 import { memberJoinedTemplate } from './member-joined.template';
 import { newsletterWelcomeTemplate } from './newsletter-welcome.template';
+import { registerWelcomeTemplate } from './register-welcome.template';
+import { loginNotificationTemplate } from './login-notification.template';
 
 export interface BuiltInTemplate {
   subject: string;
@@ -22,6 +24,8 @@ export const builtInTemplates: Record<string, BuiltInTemplate> = {
   'auth.otp.login':          otpTemplates.login,
   'auth.otp.reset_password': otpTemplates.reset_password,
   'auth.otp.email_change':   otpTemplates.email_change,
+  'auth.register.welcome':   registerWelcomeTemplate,
+  'auth.login.notification': loginNotificationTemplate,
   'invite.sent':             inviteTemplate,
   'expense.created':         expenseCreatedTemplate,
   'member.joined':           memberJoinedTemplate,

@@ -36,3 +36,8 @@ export const ResetPasswordSchema = z.object({
   newPassword: z.string().min(8).max(128),
 });
 export type ResetPasswordDto = z.infer<typeof ResetPasswordSchema>;
+
+export const GoogleSignInSchema = z.object({
+  idToken: z.string().min(20),
+});
+export type GoogleSignInDto = z.infer<typeof GoogleSignInSchema>;

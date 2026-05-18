@@ -2,11 +2,16 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { OAuth2Client } from 'google-auth-library';
 import { SessionEntity } from './entities/session.entity';
 import { UsersService } from '@/modules/users/users.service';
 import { OtpService } from '@/modules/otp/otp.service';
 import { CryptoService } from '@/core/crypto/crypto.service';
+import { MailService } from '@/core/mail/mail.service';
+import { Logger } from '@nestjs/common';
+import type { UserEntity } from '@/modules/users/entities/user.entity';
 import type {
+  GoogleSignInDto,
   LoginDto, RefreshDto, RegisterRequestDto, RegisterVerifyDto,
   ResetPasswordDto, ForgotPasswordDto,
 } from './dto/auth.dto';
@@ -15,11 +20,14 @@ interface TokenPair { accessToken: string; refreshToken: string; expiresIn: numb
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly users: UsersService,
     private readonly otp: OtpService,
     private readonly crypto: CryptoService,
     private readonly jwt: JwtService,
+    private readonly mail: MailService,
     @InjectRepository(SessionEntity)
     private readonly sessions: Repository<SessionEntity>,
   ) {}
@@ -28,7 +36,9 @@ export class AuthService {
     return this.otp.request(dto.email.toLowerCase(), 'register');
   }
 
-  async registerVerify(dto: RegisterVerifyDto): Promise<TokenPair & { userId: string }> {
+  async registerVerify(
+    dto: RegisterVerifyDto, ua?: string, ip?: string,
+  ): Promise<TokenPair & { userId: string }> {
     await this.otp.verify(dto.email.toLowerCase(), 'register', dto.code);
     const passwordHash = await this.crypto.hashPassword(dto.password);
     const user = await this.users.createVerified({
@@ -37,7 +47,9 @@ export class AuthService {
       passwordHash,
       phone: dto.phone ?? null,
     });
-    return { ...(await this.issueTokens(user.id, user.email, user.role)), userId: user.id };
+    // Fire-and-forget welcome email — do not block the response.
+    this.sendWelcomeEmail(user, 'Email + Password', ua, ip);
+    return { ...(await this.issueTokens(user.id, user.email, user.role, ua, ip)), userId: user.id };
   }
 
   async login(dto: LoginDto, ua?: string, ip?: string): Promise<TokenPair & { userId: string }> {
@@ -49,6 +61,8 @@ export class AuthService {
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
     await this.users.setLastLogin(user.id);
+    // Fire-and-forget sign-in notification — do not block the response.
+    this.sendLoginNotification(user, 'Email + Password', ua, ip);
     return { ...(await this.issueTokens(user.id, user.email, user.role, ua, ip)), userId: user.id };
   }
 
@@ -99,6 +113,101 @@ export class AuthService {
     await this.sessions.update({ userId: user.id }, { revokedAt: new Date() });
   }
 
+  /**
+   * Sign in (or register) using a Google ID token from Google Identity Services.
+   * Verifies the ID token's signature & audience against GOOGLE_OAUTH_CLIENT_ID,
+   * then finds or creates the user and issues our own JWT pair.
+   */
+  async googleSignIn(
+    dto: GoogleSignInDto, ua?: string, ip?: string,
+  ): Promise<TokenPair & { userId: string; isNew: boolean }> {
+    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+    if (!clientId) {
+      throw new UnauthorizedException('Google sign-in is not configured on the server');
+    }
+    const oauth = new OAuth2Client(clientId);
+    let payload: { email?: string; email_verified?: boolean; name?: string; picture?: string; sub?: string } | undefined;
+    try {
+      const ticket = await oauth.verifyIdToken({ idToken: dto.idToken, audience: clientId });
+      payload = ticket.getPayload() ?? undefined;
+    } catch {
+      throw new UnauthorizedException('Invalid Google credential');
+    }
+    if (!payload?.email || !payload.email_verified) {
+      throw new UnauthorizedException('Google account email is not verified');
+    }
+    const email = payload.email.toLowerCase();
+    const existing = await this.users.findByEmail(email);
+    const isNew = !existing;
+    const user = await this.users.findOrCreateOAuth({
+      email,
+      displayName: payload.name ?? email.split('@')[0],
+      avatarUrl: payload.picture ?? null,
+    });
+    if (user.status !== 'active') {
+      throw new UnauthorizedException('Account is disabled');
+    }
+    await this.users.setLastLogin(user.id);
+    if (isNew) {
+      this.sendWelcomeEmail(user, 'Google account', ua, ip);
+    } else {
+      this.sendLoginNotification(user, 'Google account', ua, ip);
+    }
+    return {
+      ...(await this.issueTokens(user.id, user.email, user.role, ua, ip)),
+      userId: user.id,
+      isNew,
+    };
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     Auth notification emails — fire-and-forget. Errors are logged but never
+     bubble up so a flaky SMTP host can't break login/registration.
+     ───────────────────────────────────────────────────────────────────────── */
+
+  private sendWelcomeEmail(
+    user: UserEntity, signUpMethod: string, ua?: string, ip?: string,
+  ): void {
+    this.mail.send({
+      to: user.email,
+      templateKey: 'auth.register.welcome',
+      variables: {
+        displayName: user.displayName,
+        email: user.email,
+        signUpMethod,
+        accountCreatedAt: formatTimestamp(user.createdAt ?? new Date()),
+        ipAddress: ip ?? 'Unknown',
+        userAgent: ua ?? 'Unknown device',
+        deviceLabel: parseDeviceLabel(ua),
+        location: 'Unknown',
+      },
+    }).catch((err) => {
+      this.logger.warn(`welcome email failed for ${user.email}: ${(err as Error).message}`);
+    });
+  }
+
+  private sendLoginNotification(
+    user: UserEntity, signInMethod: string, ua?: string, ip?: string,
+  ): void {
+    this.mail.send({
+      to: user.email,
+      templateKey: 'auth.login.notification',
+      variables: {
+        displayName: user.displayName,
+        email: user.email,
+        signInMethod,
+        signInAt: formatTimestamp(new Date()),
+        ipAddress: ip ?? 'Unknown',
+        userAgent: ua ?? 'Unknown device',
+        deviceLabel: parseDeviceLabel(ua),
+        location: 'Unknown',
+        isNewDevice: 'no',
+      },
+    }).catch((err) => {
+      this.logger.warn(`login notification failed for ${user.email}: ${(err as Error).message}`);
+    });
+  }
+
   private async issueTokens(
     userId: string, email: string, role: 'user' | 'admin', ua?: string, ip?: string,
   ): Promise<TokenPair> {
@@ -136,4 +245,35 @@ function ttlToMs(s: string): number {
   const n = Number(m[1]);
   const u = m[2];
   return n * (u === 's' ? 1000 : u === 'm' ? 60_000 : u === 'h' ? 3_600_000 : 86_400_000);
+}
+
+/** Render a Date as "18 May 2026, 3:42 PM IST" using the server's locale. */
+function formatTimestamp(d: Date): string {
+  try {
+    return new Intl.DateTimeFormat('en-IN', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true,
+      timeZoneName: 'short',
+    }).format(d);
+  } catch {
+    return d.toISOString();
+  }
+}
+
+/** Best-effort browser + OS extraction from a User-Agent string. */
+function parseDeviceLabel(ua?: string): string {
+  if (!ua) return 'Unknown device';
+  const browser =
+    /Edg\//.test(ua) ? 'Edge' :
+    /Chrome\//.test(ua) ? 'Chrome' :
+    /Firefox\//.test(ua) ? 'Firefox' :
+    /Safari\//.test(ua) ? 'Safari' :
+    /OPR\//.test(ua) ? 'Opera' : 'Browser';
+  const os =
+    /Windows/.test(ua) ? 'Windows' :
+    /Android/.test(ua) ? 'Android' :
+    /iPhone|iPad|iOS/.test(ua) ? 'iOS' :
+    /Mac OS X/.test(ua) ? 'macOS' :
+    /Linux/.test(ua) ? 'Linux' : 'Unknown OS';
+  return `${browser} on ${os}`;
 }
