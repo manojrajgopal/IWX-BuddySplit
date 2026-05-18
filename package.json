@@ -2,7 +2,7 @@
   "name": "iwx-buddysplit",
   "private": true,
   "version": "0.1.0",
-  "description": "IWX-BuddySplit — real-time expense sharing and settlement platform.",
+  "description": "IWX BuddySplit — real-time expense sharing and settlement platform.",
   "workspaces": [
     "backend",
     "frontend"

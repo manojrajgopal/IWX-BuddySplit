@@ -1,6 +1,6 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, MoreThan, Repository } from 'typeorm';
+import { DataSource, IsNull, MoreThan, Repository } from 'typeorm';
 import { InvitationEntity, InviteStatus } from './entities/invitation.entity';
 import { MemberRole, WorkspaceMemberEntity } from '@/modules/members/entities/workspace-member.entity';
 import { UsersService } from '@/modules/users/users.service';
@@ -12,6 +12,8 @@ import { RealtimeGateway } from '@/core/realtime/realtime.gateway';
 
 @Injectable()
 export class InvitationsService {
+  private readonly logger = new Logger(InvitationsService.name);
+
   constructor(
     @InjectRepository(InvitationEntity)
     private readonly invites: Repository<InvitationEntity>,
@@ -52,17 +54,21 @@ export class InvitationsService {
 
     const inviter = await this.users.require(input.invitedByUserId);
     const acceptUrl = `${process.env.PUBLIC_WEB_URL}/invitations/${inv.id}?token=${encodeURIComponent(token)}`;
+    const ttlHours = input.ttlHours ?? 168;
+    const expiresIn = ttlHours >= 24
+      ? `${Math.round(ttlHours / 24)} day${Math.round(ttlHours / 24) === 1 ? '' : 's'}`
+      : `${ttlHours} hour${ttlHours === 1 ? '' : 's'}`;
+    const role = (input.role ?? 'editor');
     await this.mail.send({
       to: email,
       templateKey: 'invite.sent',
       variables: {
         inviterName: inviter.displayName,
         workspaceName: ws.name,
+        role: role.charAt(0).toUpperCase() + role.slice(1),
         acceptUrl,
+        expiresIn,
       },
-      fallbackSubject: `${inviter.displayName} invited you to "${ws.name}"`,
-      fallbackHtml: `<p>${inviter.displayName} invited you to join "<b>${ws.name}</b>" on IWX-BuddySplit.</p>
-                     <p><a href="${acceptUrl}">Open invitation</a></p>`,
     });
     return { invitationId: inv.id, expiresAt };
   }
@@ -99,6 +105,8 @@ export class InvitationsService {
       await this.realtime.emit(`workspace:${inv.workspaceId}`, 'workspace.member.changed', {
         workspaceId: inv.workspaceId, userId: acceptingUserId, action: 'joined',
       });
+      // Send member-joined email to all existing members (fire-and-forget)
+      this.sendMemberJoinedNotification(inv.workspaceId, acceptingUserId, inv.role).catch(() => {});
       return { workspaceId: inv.workspaceId };
     });
   }
@@ -129,6 +137,8 @@ export class InvitationsService {
       await this.realtime.emit(`workspace:${inv.workspaceId}`, 'workspace.member.changed', {
         workspaceId: inv.workspaceId, userId, action: 'joined',
       });
+      // Send member-joined email to all existing members (fire-and-forget)
+      this.sendMemberJoinedNotification(inv.workspaceId, userId, inv.role).catch(() => {});
       return { workspaceId: inv.workspaceId };
     });
   }
@@ -184,5 +194,75 @@ export class InvitationsService {
         createdAt: inv.createdAt,
       };
     }));
+  }
+
+  private async sendMemberJoinedNotification(
+    workspaceId: string,
+    newUserId: string,
+    role: MemberRole,
+  ): Promise<void> {
+    try {
+      const [ws, newUser] = await Promise.all([
+        this.workspaces.getById(workspaceId),
+        this.users.require(newUserId),
+      ]);
+
+      // Get all active members including the new one
+      const allMembers = await this.members.find({
+        where: { workspaceId, leftAt: IsNull() },
+      });
+
+      // Resolve all user details
+      const userIds = allMembers.map(m => m.userId);
+      const usersData: Array<{ id: string; email: string; display_name: string }> = userIds.length > 0
+        ? await this.ds.query(`SELECT id, email, display_name FROM users WHERE id = ANY($1)`, [userIds])
+        : [];
+      const userMap = new Map(usersData.map(u => [u.id, u]));
+
+      // Build members list for the email
+      const membersForEmail = allMembers.map(m => {
+        const u = userMap.get(m.userId);
+        return {
+          name: u?.display_name ?? 'Unknown',
+          role: m.role.charAt(0).toUpperCase() + m.role.slice(1),
+          isNew: m.userId === newUserId,
+        };
+      });
+
+      // Recipients: all members except the new one
+      const recipients = allMembers
+        .filter(m => m.userId !== newUserId)
+        .map(m => userMap.get(m.userId)?.email)
+        .filter((email): email is string => !!email);
+
+      if (recipients.length === 0) return;
+
+      const memberName = newUser.displayName || newUser.email;
+      const memberInitial = (memberName.charAt(0) || '?').toUpperCase();
+      const joinedAt = new Date().toLocaleDateString('en-IN', {
+        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+      });
+      const webUrl = process.env.PUBLIC_WEB_URL ?? '';
+      const circleUrl = `${webUrl}/circles/${workspaceId}`;
+
+      await this.mail.send({
+        to: recipients,
+        templateKey: 'member.joined',
+        variables: {
+          workspaceName: ws.name,
+          memberName,
+          memberEmail: newUser.email,
+          memberInitial,
+          role: role.charAt(0).toUpperCase() + role.slice(1),
+          joinedAt,
+          memberCount: allMembers.length,
+          members: membersForEmail,
+          circleUrl,
+        },
+        fallbackSubject: `${memberName} joined "${ws.name}" — IWX BuddySplit`,
+      });
+    } catch (err) {
+      this.logger.warn(`member.joined notification failed: ${(err as Error).message}`);
+    }
   }
 }

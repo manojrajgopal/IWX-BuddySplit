@@ -2,7 +2,7 @@
   "name": "@iwx-buddysplit/backend",
   "version": "0.1.0",
   "private": true,
-  "description": "IWX-BuddySplit API, realtime gateway and workers.",
+  "description": "IWX BuddySplit API, realtime gateway and workers.",
   "main": "dist/main.js",
   "scripts": {
     "build": "nest build",

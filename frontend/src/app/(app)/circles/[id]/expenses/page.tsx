@@ -19,12 +19,14 @@ interface Member {
 
 export default async function ExpensesPage({ params }: { params: Promise<{ id: string }> }): Promise<JSX.Element> {
   const { id } = await params;
-  const [list, members] = await Promise.all([
+  const [listRaw, membersRaw] = await Promise.all([
     apiServer<Expense[]>(`/v1/workspaces/${id}/expenses`, { revalidate: false, throwOnError: false })
-      .catch(() => [] as Expense[]) ?? [],
+      .catch(() => undefined),
     apiServer<Member[]>(`/v1/workspaces/${id}/members`, { revalidate: false, throwOnError: false })
-      .catch(() => [] as Member[]) ?? [],
+      .catch(() => undefined),
   ]);
+  const list = listRaw ?? [];
+  const members = membersRaw ?? [];
   const nameMap = Object.fromEntries(members.map((m) => [m.id, m.user?.displayName ?? '']));
   return (
     <div>

@@ -1,4 +1,4 @@
-# IWX-BuddySplit — Architecture & Plan
+# IWX BuddySplit — Architecture & Plan
 
 This document covers the ten deliverables required by the brief.
 

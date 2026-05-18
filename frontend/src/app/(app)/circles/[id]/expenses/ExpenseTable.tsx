@@ -32,7 +32,7 @@ export function ExpenseTable({ workspaceId, expenses, nameMap }: Props): JSX.Ele
           <tbody>
             {expenses.map((e) => (
               <tr key={e.id} className="table__row--link" onClick={() => setSelectedId(e.id)} style={{ cursor: 'pointer' }}>
-                <td className="text-secondary">{new Date(e.occurredAt).toLocaleDateString()}</td>
+                <td className="text-secondary">{new Date(e.occurredAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
                 <td>{e.description}</td>
                 <td>{nameMap[e.payerMemberId] || '—'}</td>
                 <td><span className="pill">{e.splitMode}</span></td>

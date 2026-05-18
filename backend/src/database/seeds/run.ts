@@ -10,6 +10,7 @@ import { SiteSettingEntity } from '@/modules/settings/entities/site-setting.enti
 import { NavigationItemEntity } from '@/modules/navigation/entities/navigation-item.entity';
 import { BrandingAssetEntity } from '@/modules/branding/entities/branding-asset.entity';
 import { EmailTemplateEntity } from '@/modules/email/entities/email-template.entity';
+import { builtInTemplates } from '@/core/mail/templates';
 import * as argon2 from 'argon2';
 
 async function main(): Promise<void> {
@@ -43,7 +44,7 @@ async function main(): Promise<void> {
 
   // ── site settings (public) ──────────────────────────────────────────────
   const publicSettings: Array<[string, unknown]> = [
-    ['app.name', 'IWX-BuddySplit'],
+    ['app.name', 'IWX BuddySplit'],
     ['app.tagline', 'Track every rupee. Settle every chain.'],
     ['app.description', 'A premium expense-sharing and real-time settlement platform.'],
     ['company.name', 'InfiniteWaveX'],
@@ -96,41 +97,13 @@ async function main(): Promise<void> {
   );
 
   // ── email templates ─────────────────────────────────────────────────────
-  const baseStyles = `font-family: Inter, sans-serif; color: #111; line-height: 1.6;`;
-  const templatesData: Array<Partial<EmailTemplateEntity>> = [
-    {
-      key: 'auth.otp.register',
-      subject: 'Your IWX-BuddySplit verification code: {{code}}',
-      html: `<div style="${baseStyles}">
-        <h2>Verify your email</h2>
-        <p>Your verification code is:</p>
-        <p style="font-size:28px;letter-spacing:6px;font-weight:700">{{code}}</p>
-        <p>This code expires in {{ttlMinutes}} minutes.</p>
-      </div>`,
-    },
-    {
-      key: 'auth.otp.reset_password',
-      subject: 'Reset your IWX-BuddySplit password',
-      html: `<div style="${baseStyles}">
-        <h2>Reset your password</h2>
-        <p>Use this code to reset your password:</p>
-        <p style="font-size:28px;letter-spacing:6px;font-weight:700">{{code}}</p>
-        <p>This code expires in {{ttlMinutes}} minutes. If you didn't request this, ignore this email.</p>
-      </div>`,
-    },
-    {
-      key: 'invite.sent',
-      subject: '{{inviterName}} invited you to "{{workspaceName}}"',
-      html: `<div style="${baseStyles}">
-        <h2>You're invited</h2>
-        <p><b>{{inviterName}}</b> invited you to the workspace <b>{{workspaceName}}</b> on IWX-BuddySplit.</p>
-        <p><a href="{{acceptUrl}}" style="display:inline-block;padding:12px 20px;background:#111;color:#fff;border-radius:8px;text-decoration:none">Open invitation</a></p>
-      </div>`,
-    },
-  ];
-  for (const t of templatesData) {
-    const existing = await templates.findOne({ where: { key: t.key! } });
-    if (!existing) await templates.save(templates.create(t));
+  // Templates are now defined in code at backend/src/core/mail/templates/*.
+  // Seeding upserts them into the DB so admins can override via the admin UI.
+  for (const [key, tpl] of Object.entries(builtInTemplates)) {
+    await templates.upsert(
+      { key, subject: tpl.subject, html: tpl.html } as any,
+      ['key'],
+    );
   }
 
   // eslint-disable-next-line no-console

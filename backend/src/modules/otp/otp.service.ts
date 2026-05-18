@@ -36,8 +36,8 @@ export class OtpService {
       to: email,
       templateKey: `auth.otp.${purpose}`,
       variables: { code, ttlMinutes: Math.round(ttl / 60), email },
-      fallbackSubject: `Your verification code: ${code}`,
-      fallbackHtml: `<p>Your IWX-BuddySplit verification code is <b>${code}</b>.</p><p>It expires in ${Math.round(ttl / 60)} minutes.</p>`,
+      fallbackSubject: `Verification code — IWX BuddySplit`,
+      fallbackHtml: `<p>Your IWX BuddySplit verification code is <b>${code}</b>.</p><p>It expires in ${Math.round(ttl / 60)} minutes.</p>`,
     });
     return { expiresAt };
   }

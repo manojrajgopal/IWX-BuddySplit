@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { EmailTemplateEntity } from '@/modules/email/entities/email-template.entity';
 import { EmailAccountsService } from '@/modules/email/email-accounts.service';
 import { EmailAccountEntity } from '@/modules/email/entities/email-account.entity';
+import { getBuiltInTemplate } from './templates';
 
 interface SendOptions {
   to: string | string[];
@@ -41,11 +42,43 @@ export class MailService {
   }
 
   async send(opts: SendOptions): Promise<void> {
-    const tpl = await this.templates.findOne({ where: { key: opts.templateKey } });
-    const vars = opts.variables ?? {};
-    const subject = render(tpl?.subject ?? opts.fallbackSubject ?? '', vars);
-    const html = render(tpl?.html ?? opts.fallbackHtml ?? '', vars);
-    const text = render(tpl?.text ?? opts.fallbackText ?? stripHtml(html), vars);
+    // Priority: DB override → built-in file template → caller-provided fallback
+    const dbTpl = await this.templates.findOne({ where: { key: opts.templateKey } });
+    const builtIn = getBuiltInTemplate(opts.templateKey);
+
+    const webUrl = process.env.PUBLIC_WEB_URL ?? '';
+    const globalVars: Record<string, unknown> = {
+      logoUrl: `${webUrl}/brand/logo.svg`,
+      appName: process.env.APP_NAME ?? 'IWX BuddySplit',
+      companyName: 'InfiniteWaveX',
+      webUrl,
+      year: new Date().getFullYear(),
+    };
+    const vars: Record<string, unknown> = { ...globalVars, ...opts.variables };
+
+    const subjectSource =
+      (dbTpl?.subject && dbTpl.subject.trim()) ||
+      builtIn?.subject ||
+      opts.fallbackSubject ||
+      '';
+    const htmlSource =
+      (dbTpl?.html && dbTpl.html.trim()) ||
+      builtIn?.html ||
+      opts.fallbackHtml ||
+      '';
+    const textSource =
+      (dbTpl?.text && dbTpl.text.trim()) ||
+      opts.fallbackText ||
+      '';
+
+    const subject = render(subjectSource, vars);
+    const html = render(htmlSource, vars);
+    const text = textSource ? render(textSource, vars) : stripHtml(html);
+
+    if (!html) {
+      this.logger.warn(`mail[${opts.templateKey}] skipped → no template content available`);
+      return;
+    }
 
     const resolved = await this.resolveAccount(opts.accountId);
     if (!resolved) {
@@ -90,7 +123,7 @@ export class MailService {
       await target.transporter.sendMail({
         from: target.from,
         to,
-        subject: 'IWX-BuddySplit · email account test',
+        subject: 'IWX BuddySplit · email account test',
         text: `This is a test message from email account "${target.entity.name}".`,
         html: `<p>This is a test message from email account <b>${escapeHtml(target.entity.name)}</b>.</p>`,
       });

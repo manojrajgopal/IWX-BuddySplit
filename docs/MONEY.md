@@ -1,6 +1,6 @@
 # Money & Settlement — Specification
 
-> All monetary values in IWX-BuddySplit are stored, transmitted, and computed as **integer minor units** (`bigint`). Floating-point is forbidden in this codebase for monetary values.
+> All monetary values in IWX BuddySplit are stored, transmitted, and computed as **integer minor units** (`bigint`). Floating-point is forbidden in this codebase for monetary values.
 
 ## Representation
 

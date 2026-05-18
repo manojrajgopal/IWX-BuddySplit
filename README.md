@@ -1,4 +1,4 @@
-# IWX-BuddySplit
+# IWX BuddySplit
 
 A production-grade, real-time expense sharing and settlement platform.
 
@@ -8,7 +8,7 @@ A production-grade, real-time expense sharing and settlement platform.
 ## Monorepo layout
 
 ```
-IWX-BuddySplit/
+IWX BuddySplit/
 ├── docs/                 architecture, schema, money rules, runbooks
 ├── backend/              NestJS API + realtime gateway + workers
 ├── frontend/             Next.js 14 (App Router) – dynamic CMS-driven UI

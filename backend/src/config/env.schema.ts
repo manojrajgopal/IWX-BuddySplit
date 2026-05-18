@@ -13,7 +13,7 @@ const Int = (def?: number) =>
 
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  APP_NAME: z.string().default('IWX-BuddySplit'),
+  APP_NAME: z.string().default('IWX BuddySplit'),
   PORT: Int(4000),
   PUBLIC_API_URL: z.string().url(),
   PUBLIC_WEB_URL: z.string().url(),

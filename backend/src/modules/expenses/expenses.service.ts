@@ -1,5 +1,5 @@
 import {
-  BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException,
+  BadRequestException, ConflictException, ForbiddenException, forwardRef, Inject, Injectable, NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Repository } from 'typeorm';
@@ -10,6 +10,8 @@ import { WorkspaceEntity } from '@/modules/workspaces/entities/workspace.entity'
 import { Money, SplitEngine, SplitInput, SplitParticipant } from '@/core/money';
 import { RealtimeGateway } from '@/core/realtime/realtime.gateway';
 import { NotifyBus } from '@/core/database/notify.bus';
+import { MailService } from '@/core/mail/mail.service';
+import { SettlementsService } from '@/modules/settlements/settlements.service';
 
 export interface CreateExpenseInput {
   workspaceId: string;
@@ -37,6 +39,9 @@ export class ExpensesService {
     private readonly ds: DataSource,
     private readonly realtime: RealtimeGateway,
     private readonly bus: NotifyBus,
+    private readonly mail: MailService,
+    @Inject(forwardRef(() => SettlementsService))
+    private readonly settlementsService: SettlementsService,
   ) {}
 
   async list(workspaceId: string): Promise<ExpenseEntity[]> {
@@ -112,7 +117,7 @@ export class ExpensesService {
     const splitInput = this.parseSplitInput(input.splitMode, input.splitConfig, participants, input.total);
     const shares = SplitEngine.split(input.total, splitInput);
 
-    return this.ds.transaction(async (tx) => {
+    const expense = await this.ds.transaction(async (tx) => {
       const e = await tx.getRepository(ExpenseEntity).save(
         tx.getRepository(ExpenseEntity).create({
           workspaceId: ws.id,
@@ -139,6 +144,11 @@ export class ExpensesService {
       await this.afterMutation(ws.id, 'expense.created', { expenseId: e.id });
       return e;
     });
+
+    // Send email notification to all circle members (fire-and-forget)
+    this.sendExpenseNotification(expense, ws, memberRows, memberById, shares, input).catch(() => {});
+
+    return expense;
   }
 
   async softDelete(id: string, actorUserId: string): Promise<void> {
@@ -191,5 +201,124 @@ export class ExpensesService {
   private async afterMutation(workspaceId: string, event: string, data: Record<string, unknown>): Promise<void> {
     await this.realtime.emit(`workspace:${workspaceId}`, event, { workspaceId, ...data });
     await this.bus.publish({ channel: 'cache', event: 'invalidate-tag', payload: { tag: `ws:${workspaceId}` } });
+  }
+
+  private async sendExpenseNotification(
+    expense: ExpenseEntity,
+    workspace: WorkspaceEntity,
+    memberRows: WorkspaceMemberEntity[],
+    memberById: Map<string, WorkspaceMemberEntity>,
+    shares: Array<{ memberId: string; share: Money }>,
+    input: CreateExpenseInput,
+  ): Promise<void> {
+    // Resolve all member names and emails
+    const userIds = memberRows.map(m => m.userId);
+    const users: Array<{ id: string; email: string; display_name: string }> = userIds.length > 0
+      ? await this.ds.query(`SELECT id, email, display_name FROM users WHERE id = ANY($1)`, [userIds])
+      : [];
+    const userMap = new Map(users.map(u => [u.id, u]));
+    const memberNameMap = new Map(memberRows.map(m => [m.id, userMap.get(m.userId)?.display_name ?? 'Unknown']));
+
+    const payerName = memberNameMap.get(expense.payerMemberId) ?? 'Someone';
+    const createdByMember = memberRows.find(m => m.userId === input.actorUserId);
+    const createdByName = createdByMember ? (memberNameMap.get(createdByMember.id) ?? 'Someone') : 'Someone';
+
+    // Format amount from minor units
+    const digits = expense.currency === 'JPY' || expense.currency === 'KRW' ? 0 : 2;
+    const totalNum = Number(BigInt(expense.totalMinor)) / Math.pow(10, digits);
+    const formattedAmount = totalNum.toFixed(digits);
+
+    // Build splits info
+    const splitsForEmail = shares.map(s => {
+      const shareNum = Number(s.share.amount) / Math.pow(10, digits);
+      return {
+        memberName: memberNameMap.get(s.memberId) ?? 'Unknown',
+        formattedShare: shareNum.toFixed(digits),
+        isPayer: s.memberId === expense.payerMemberId,
+      };
+    });
+
+    // Calculate suggested transfers (for THIS expense only — who owes the payer)
+    const suggestedTransfers: Array<{ from: string; to: string; formattedAmount: string }> = [];
+    for (const s of shares) {
+      if (s.memberId !== expense.payerMemberId && s.share.amount > BigInt(0)) {
+        const shareNum = Number(s.share.amount) / Math.pow(10, digits);
+        suggestedTransfers.push({
+          from: memberNameMap.get(s.memberId) ?? 'Unknown',
+          to: payerName,
+          formattedAmount: shareNum.toFixed(digits),
+        });
+      }
+    }
+
+    // Calculate OVERALL suggested transfers (net across all expenses + settlements)
+    // This is the same data shown on the Settlements page.
+    const overallTransfers: Array<{ from: string; to: string; formattedAmount: string }> = [];
+    const overallBalances: Array<{ memberName: string; formattedPaid: string; formattedOwed: string; formattedNet: string; netColor: string; netPrefix: string }> = [];
+    try {
+      const summary = await this.settlementsService.summarize(expense.workspaceId);
+      for (const t of summary.transfers) {
+        const amt = Number(BigInt(t.amount)) / Math.pow(10, digits);
+        overallTransfers.push({
+          from: memberNameMap.get(t.from) ?? 'Unknown',
+          to: memberNameMap.get(t.to) ?? 'Unknown',
+          formattedAmount: amt.toFixed(digits),
+        });
+      }
+      for (const m of summary.members) {
+        const paidN = Number(BigInt(m.paid)) / Math.pow(10, digits);
+        const owedN = Number(BigInt(m.owed)) / Math.pow(10, digits);
+        const netN = Number(BigInt(m.net)) / Math.pow(10, digits);
+        overallBalances.push({
+          memberName: memberNameMap.get(m.memberId) ?? 'Unknown',
+          formattedPaid: paidN.toFixed(digits),
+          formattedOwed: owedN.toFixed(digits),
+          formattedNet: Math.abs(netN).toFixed(digits),
+          netColor: netN > 0 ? '#0a7f3f' : netN < 0 ? '#c0392b' : '#999',
+          netPrefix: netN < 0 ? '-' : netN > 0 ? '+' : '',
+        });
+      }
+    } catch {
+      // Non-fatal; skip overall section if summarize fails.
+    }
+
+    const occurredAt = expense.occurredAt.toLocaleDateString('en-IN', {
+      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+    });
+
+    const webUrl = process.env.PUBLIC_WEB_URL ?? '';
+    const expenseUrl = `${webUrl}/circles/${expense.workspaceId}/expenses`;
+
+    // Send to all active members
+    const recipients = memberRows
+      .filter(m => !m.leftAt)
+      .map(m => userMap.get(m.userId)?.email)
+      .filter((email): email is string => !!email);
+
+    if (recipients.length === 0) return;
+
+    await this.mail.send({
+      to: recipients,
+      templateKey: 'expense.created',
+      variables: {
+        workspaceName: workspace.name,
+        description: expense.description,
+        currency: expense.currency,
+        formattedAmount,
+        payerName,
+        createdByName,
+        category: expense.category || 'Uncategorized',
+        splitMode: expense.splitMode.charAt(0).toUpperCase() + expense.splitMode.slice(1),
+        occurredAt,
+        notes: (expense as any).notes ?? '',
+        splits: splitsForEmail,
+        suggestedTransfers,
+        overallTransfers,
+        overallBalances,
+        hasOverall: overallTransfers.length > 0,
+        expenseUrl,
+      },
+      fallbackSubject: `New expense in "${workspace.name}" — ${expense.description}`,
+    });
   }
 }
