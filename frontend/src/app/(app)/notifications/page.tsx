@@ -52,9 +52,10 @@ export default async function NotificationsPage(): Promise<JSX.Element> {
       ) : (
         <div className="card" style={{ padding: 0 }}>
           {items.map((n) => {
-            const Wrapper: React.ElementType = n.href ? Link : 'div';
-            return (
-              <Wrapper key={n.id} href={n.href} className="list-item" style={n.readAt === null ? { background: 'var(--bg-surface)' } : undefined}>
+            const className = 'list-item';
+            const style = n.readAt === null ? { background: 'var(--bg-surface)' } : undefined;
+            const inner = (
+              <>
                 <span className={'list-item__avatar' + (n.readAt === null ? '' : ' list-item__avatar--neutral')}>{KIND_LABEL[n.kind].slice(0, 1)}</span>
                 <div className="list-item__body">
                   <div className="list-item__title">{n.title}</div>
@@ -65,7 +66,16 @@ export default async function NotificationsPage(): Promise<JSX.Element> {
                   </div>
                 </div>
                 <div className="list-item__trail">{new Date(n.createdAt).toLocaleString()}</div>
-              </Wrapper>
+              </>
+            );
+            return n.href ? (
+              <Link key={n.id} href={n.href} className={className} style={style}>
+                {inner}
+              </Link>
+            ) : (
+              <div key={n.id} className={className} style={style}>
+                {inner}
+              </div>
             );
           })}
         </div>

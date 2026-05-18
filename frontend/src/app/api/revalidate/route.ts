@@ -13,6 +13,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   const body = (await req.json().catch(() => ({}))) as { tags?: string[] };
   const tags = Array.isArray(body.tags) ? body.tags : ['cms:settings', 'cms:navigation', 'cms:branding'];
-  for (const t of tags) revalidateTag(t);
+  // Next 16 changed the signature to (tag, profile). 'max' = invalidate across
+  // all cache profiles, which matches the pre-16 behaviour we want here.
+  for (const t of tags) revalidateTag(t, 'max');
   return NextResponse.json({ success: true, revalidated: tags });
 }

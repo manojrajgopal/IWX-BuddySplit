@@ -2,6 +2,7 @@ import { AuthShell } from '@/components/auth/AuthShell';
 import { RegisterForm } from './RegisterForm';
 
 export const metadata = { title: 'Create your account' };
+export const dynamic = 'force-dynamic';
 
 export default function RegisterPage(): JSX.Element {
   return (
