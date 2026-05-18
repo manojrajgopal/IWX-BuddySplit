@@ -17,13 +17,13 @@ const ITEMS: Testimonial[] = [
   },
   {
     quote: 'Three roommates, one flat, dozens of bills a month. We finally stopped tracking groceries on paper. The percentage split saves us hours.',
-    name: 'Rahul Sharma',
+    name: 'Manoj Sharma',
     role: 'Roommate in Bengaluru',
     avatar: 'R',
   },
   {
     quote: 'Our office lunch group of 14 people was a nightmare. The minimum-transfer settlement is genuinely magical — we settle every Friday now.',
-    name: 'Sneha Iyer',
+    name: 'Bindu Iyer',
     role: 'Team lead at a startup',
     avatar: 'S',
   },

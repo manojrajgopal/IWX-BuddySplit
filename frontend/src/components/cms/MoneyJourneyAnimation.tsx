@@ -298,8 +298,8 @@ function ScenePile({ progress: _p }: { progress: number }): JSX.Element {
 function SceneChaos({ progress: _p }: { progress: number }): JSX.Element {
   const friends = [
     { x: 150, y: 220, color: '#e76f51', name: 'Priya', bubble: '“I paid the hotel!”',     delay: 0   },
-    { x: 320, y: 220, color: '#f4a261', name: 'Rahul', bubble: '“I covered the cabs?”',  delay: 0.6 },
-    { x: 490, y: 220, color: '#2a9d8f', name: 'Sneha', bubble: '“Wait, who paid food?”', delay: 1.2 },
+    { x: 320, y: 220, color: '#f4a261', name: 'Manoj', bubble: '“I covered the cabs?”',  delay: 0.6 },
+    { x: 490, y: 220, color: '#2a9d8f', name: 'Bindu', bubble: '“Wait, who paid food?”', delay: 1.2 },
     { x: 650, y: 220, color: '#e9c46a', name: 'Amit',  bubble: '“This is unfair!”',       delay: 1.8 },
   ];
 

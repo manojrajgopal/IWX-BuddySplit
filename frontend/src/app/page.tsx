@@ -233,7 +233,7 @@ export default async function HomePage(): Promise<JSX.Element> {
               <span className="split-mode-item__tag">Shares</span>
               <h3>Split by Shares (Ratio)</h3>
             </div>
-            <p>Assign weight-based shares to each person. If Priya has 2 shares and Rahul has 1 share, Priya pays 2/3 and Rahul pays 1/3. Works for any ratio — 3:2:1, 5:5:3, or whatever your group decides.</p>
+            <p>Assign weight-based shares to each person. If Priya has 2 shares and Manoj has 1 share, Priya pays 2/3 and Manoj pays 1/3. Works for any ratio — 3:2:1, 5:5:3, or whatever your group decides.</p>
           </div>
           <div className="split-mode-item">
             <div className="split-mode-item__header">
@@ -262,15 +262,15 @@ export default async function HomePage(): Promise<JSX.Element> {
                 <p><strong>After all the trip expenses are logged:</strong></p>
                 <ul>
                   <li>Priya is owed ₹500 (she paid for most things)</li>
-                  <li>Rahul owes ₹200</li>
-                  <li>Sneha owes ₹150</li>
+                  <li>Manoj owes ₹200</li>
+                  <li>Bindu owes ₹150</li>
                   <li>Amit owes ₹150</li>
                 </ul>
                 <p><strong>Without BuddySplit:</strong> Confusion — who pays whom? Multiple back-and-forth transfers.</p>
                 <p><strong>With BuddySplit:</strong> Just 3 clean transfers:</p>
                 <ul>
-                  <li>Rahul → Priya: ₹200</li>
-                  <li>Sneha → Priya: ₹150</li>
+                  <li>Manoj → Priya: ₹200</li>
+                  <li>Bindu → Priya: ₹150</li>
                   <li>Amit → Priya: ₹150</li>
                 </ul>
                 <p>Everyone knows exactly what to do. Done in minutes.</p>

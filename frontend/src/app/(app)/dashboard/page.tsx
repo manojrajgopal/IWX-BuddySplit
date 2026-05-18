@@ -370,13 +370,13 @@ export default async function HomePage(): Promise<JSX.Element> {
             <div className="settlement-example__row settlement-example__row--owed">
               <span>Priya is owed</span><strong>₹500</strong>
             </div>
-            <div className="settlement-example__row"><span>Rahul owes</span><strong>₹200</strong></div>
-            <div className="settlement-example__row"><span>Sneha owes</span><strong>₹150</strong></div>
+            <div className="settlement-example__row"><span>Manoj owes</span><strong>₹200</strong></div>
+            <div className="settlement-example__row"><span>Bindu owes</span><strong>₹150</strong></div>
             <div className="settlement-example__row"><span>Amit owes</span><strong>₹150</strong></div>
             <div className="settlement-example__divider">↓ BuddySplit suggests ↓</div>
             <div className="settlement-example__plan">
-              <div>Rahul → Priya: <strong>₹200</strong></div>
-              <div>Sneha → Priya: <strong>₹150</strong></div>
+              <div>Manoj → Priya: <strong>₹200</strong></div>
+              <div>Bindu → Priya: <strong>₹150</strong></div>
               <div>Amit → Priya: <strong>₹150</strong></div>
             </div>
             <div className="settlement-example__done">✓ Settled in 3 clean transfers</div>
