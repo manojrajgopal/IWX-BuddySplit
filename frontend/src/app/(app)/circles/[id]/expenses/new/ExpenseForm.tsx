@@ -93,7 +93,7 @@ export function ExpenseForm({ workspaceId, currency, members }: Props): JSX.Elem
   }
 
   return (
-    <form onSubmit={onSubmit} className="card" style={{ maxWidth: 720 }}>
+    <form onSubmit={onSubmit} className="card" style={{ width: '100%' }}>
       <div className="field"><label className="label">Description</label>
         <input className="input" required value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. Dinner at Meghana Foods" />
       </div>
@@ -164,12 +164,11 @@ export function ExpenseForm({ workspaceId, currency, members }: Props): JSX.Elem
           <p className="field__hint">Assign line-item amounts to each person. Must total the expense amount.</p>
         )}
 
-        <div className="split-members">
+        <div className="split-members split-members--flow">
           {members.map(m => {
             const checked = participants.has(m.memberId);
-            const needsInput = checked && splitMode !== 'equal';
             return (
-              <div key={m.memberId} className={'split-member' + (checked ? ' split-member--active' : '')}>
+              <div key={m.memberId} className={'split-member split-member--chip' + (checked ? ' split-member--active' : '')}>
                 <div className="split-member__row">
                   <button
                     type="button"
@@ -186,44 +185,25 @@ export function ExpenseForm({ workspaceId, currency, members }: Props): JSX.Elem
                       ≈ {currency} {(parseFloat(amount) / visibleMembers.length).toFixed(digits)}
                     </span>
                   )}
+                  {checked && splitMode === 'exact' && (
+                    <input className="input input--sm input--inline text-mono" inputMode="decimal" placeholder={`0.${'0'.repeat(digits)}`} value={exact[m.memberId] ?? ''} onChange={(e) => setExact({ ...exact, [m.memberId]: e.target.value })} />
+                  )}
+                  {checked && splitMode === 'percentage' && (
+                    <div className="split-member__inline-input">
+                      <input className="input input--sm input--inline text-mono" inputMode="decimal" placeholder="0" value={percent[m.memberId] ?? ''} onChange={(e) => setPercent({ ...percent, [m.memberId]: e.target.value })} />
+                      <span className="split-member__suffix">%</span>
+                    </div>
+                  )}
+                  {checked && splitMode === 'shares' && (
+                    <input className="input input--sm input--inline text-mono" inputMode="numeric" placeholder="1" value={shares[m.memberId] ?? ''} onChange={(e) => setShares({ ...shares, [m.memberId]: e.target.value })} />
+                  )}
+                  {checked && splitMode === 'adjustment' && (
+                    <input className="input input--sm input--inline text-mono" inputMode="decimal" placeholder="±0.00" value={adjustments[m.memberId] ?? ''} onChange={(e) => setAdjustments({ ...adjustments, [m.memberId]: e.target.value })} />
+                  )}
+                  {checked && splitMode === 'itemized' && (
+                    <input className="input input--sm input--inline text-mono" inputMode="decimal" placeholder={`0.${'0'.repeat(digits)}`} value={exact[m.memberId] ?? ''} onChange={(e) => setExact({ ...exact, [m.memberId]: e.target.value })} />
+                  )}
                 </div>
-                {needsInput && (
-                  <div className="split-member__input">
-                    {splitMode === 'exact' && (
-                      <div className="field" style={{ margin: 0 }}>
-                        <label className="label label--sm">Amount ({currency})</label>
-                        <input className="input input--sm text-mono" inputMode="decimal" placeholder={`0.${'0'.repeat(digits)}`} value={exact[m.memberId] ?? ''} onChange={(e) => setExact({ ...exact, [m.memberId]: e.target.value })} />
-                      </div>
-                    )}
-                    {splitMode === 'percentage' && (
-                      <div className="field" style={{ margin: 0 }}>
-                        <label className="label label--sm">Percentage</label>
-                        <div style={{ position: 'relative' }}>
-                          <input className="input input--sm text-mono" inputMode="decimal" placeholder="0" value={percent[m.memberId] ?? ''} onChange={(e) => setPercent({ ...percent, [m.memberId]: e.target.value })} style={{ paddingRight: '2rem' }} />
-                          <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.85rem' }}>%</span>
-                        </div>
-                      </div>
-                    )}
-                    {splitMode === 'shares' && (
-                      <div className="field" style={{ margin: 0 }}>
-                        <label className="label label--sm">Shares</label>
-                        <input className="input input--sm text-mono" inputMode="numeric" placeholder="1" value={shares[m.memberId] ?? ''} onChange={(e) => setShares({ ...shares, [m.memberId]: e.target.value })} />
-                      </div>
-                    )}
-                    {splitMode === 'adjustment' && (
-                      <div className="field" style={{ margin: 0 }}>
-                        <label className="label label--sm">Adjustment ({currency})</label>
-                        <input className="input input--sm text-mono" inputMode="decimal" placeholder="±0.00" value={adjustments[m.memberId] ?? ''} onChange={(e) => setAdjustments({ ...adjustments, [m.memberId]: e.target.value })} />
-                      </div>
-                    )}
-                    {splitMode === 'itemized' && (
-                      <div className="field" style={{ margin: 0 }}>
-                        <label className="label label--sm">Item total ({currency})</label>
-                        <input className="input input--sm text-mono" inputMode="decimal" placeholder={`0.${'0'.repeat(digits)}`} value={exact[m.memberId] ?? ''} onChange={(e) => setExact({ ...exact, [m.memberId]: e.target.value })} />
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             );
           })}

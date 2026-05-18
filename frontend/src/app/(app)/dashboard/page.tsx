@@ -24,17 +24,33 @@ export default async function DashboardPage(): Promise<JSX.Element> {
       <header style={{ marginBottom: '2rem' }}>
         <div className="text-uppercase-label">Overview</div>
         <h1>Welcome back</h1>
-        <p className="text-secondary">Here's what's happening across your circles.</p>
+        <p className="text-secondary">Here&apos;s what&apos;s happening across your circles.</p>
       </header>
 
-      <section style={{ marginBottom: '2.5rem' }}>
+      {/* Quick stats */}
+      <div className="feature-grid" style={{ marginBottom: '2.5rem' }}>
+        <div className="card">
+          <div className="text-uppercase-label">Circles</div>
+          <h2 style={{ marginTop: '0.5rem' }}>{list.length}</h2>
+        </div>
+        <div className="card">
+          <div className="text-uppercase-label">Active</div>
+          <h2 style={{ marginTop: '0.5rem' }}>{list.filter(w => w.status === 'active').length}</h2>
+        </div>
+        <div className="card">
+          <div className="text-uppercase-label">Notifications</div>
+          <h2 style={{ marginTop: '0.5rem' }}>{unreadCount}</h2>
+        </div>
+      </div>
+
+      <section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 className="card__title">Your circles</h3>
           <Link href="/circles/new" className="btn btn--primary btn--sm">New circle</Link>
         </div>
         {list.length === 0 ? (
-          <div className="empty-state">
-            <p style={{ marginBottom: '1rem' }}>No circles yet.</p>
+          <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
+            <p style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>No circles yet. Create one to start splitting expenses.</p>
             <Link href="/circles/new" className="btn btn--outline">Create your first circle</Link>
           </div>
         ) : (

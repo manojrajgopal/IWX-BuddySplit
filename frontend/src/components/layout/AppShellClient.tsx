@@ -5,10 +5,10 @@ import { Sidebar, type SidebarGroup } from './Sidebar';
 import { IconSearch, IconBell, IconMenu, IconX } from './Icons';
 import { NavigationProvider } from './NavigationProvider';
 import { NavLink } from './NavLink';
+import { ThemeToggle } from './ThemeToggle';
 
 // Lazy-load interactive menus — they only need to render after hydration.
 const UserMenu = dynamic(() => import('./UserMenu').then(m => m.UserMenu), { ssr: false });
-const CreateMenu = dynamic(() => import('./CreateMenu').then(m => m.CreateMenu), { ssr: false });
 
 interface Brand { name: string; tagline?: string; logoUrl?: string }
 interface SessionInfo { email: string; displayName?: string | null; isAdmin?: boolean }
@@ -62,7 +62,7 @@ export function AppShellClient({ brand, groups, session, unreadNotifications = 0
         <div className="app-topbar__actions">
           {session ? (
             <>
-              <CreateMenu />
+              <ThemeToggle />
               <NavLink href="/notifications" className="app-topbar__icon-btn" title="Notifications" aria-label="Notifications">
                 <IconBell size={20} />
                 {unreadNotifications > 0 && (
