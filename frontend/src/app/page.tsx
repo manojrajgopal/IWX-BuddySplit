@@ -25,7 +25,10 @@ export default async function HomePage(): Promise<JSX.Element> {
           <Link href={settingString(settings, 'cta.primary.href', '/register')} className="btn btn--primary btn--lg">
             {settingString(settings, 'cta.primary.label', 'Get started — It\'s free')}
           </Link>
-          <Link href="#how-it-works" className="btn btn--outline btn--lg">
+          <Link href="/login" className="btn btn--outline btn--lg">
+            Sign in
+          </Link>
+          <Link href="#how-it-works" className="btn btn--ghost btn--lg">
             See how it works
           </Link>
         </div>

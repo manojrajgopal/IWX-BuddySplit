@@ -4,6 +4,7 @@ import { getBranding, getPublicSettings, settingString } from '@/lib/cms';
 import {
   IconScale, IconZap, IconShield, IconGlobe, IconUsers,
 } from '@/components/auth/Icons';
+import { NavigationProvider } from '@/components/layout/NavigationProvider';
 export { AuthTrust } from '@/components/auth/AuthTrust';
 
 interface Props {
@@ -54,6 +55,7 @@ export async function AuthShell({ children, variant = 'login' }: Props): Promise
   }[variant];
 
   return (
+    <NavigationProvider>
     <div className="auth">
       <aside className="auth__panel">
         <div className="auth__panel-inner">
@@ -111,6 +113,7 @@ export async function AuthShell({ children, variant = 'login' }: Props): Promise
         {children}
       </main>
     </div>
+    </NavigationProvider>
   );
 }
 

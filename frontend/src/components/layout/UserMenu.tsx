@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { IconChevDown, IconLogOut, NavUser, NavSettings, NavShield, NavHelp, IconCheck } from './Icons';
+import { NavLink } from './NavLink';
 
 interface Props {
   email: string;
@@ -66,21 +66,21 @@ export function UserMenu({ email, displayName, isAdmin }: Props): JSX.Element {
               )}
             </div>
           </div>
-          <Link href="/profile" className="user-menu__item" role="menuitem" onClick={() => setOpen(false)}>
+          <NavLink href="/profile" className="user-menu__item" role="menuitem" onClick={() => setOpen(false)}>
             <NavUser size={16} /> Your profile
-          </Link>
-          <Link href="/settings" className="user-menu__item" role="menuitem" onClick={() => setOpen(false)}>
+          </NavLink>
+          <NavLink href="/settings" className="user-menu__item" role="menuitem" onClick={() => setOpen(false)}>
             <NavSettings size={16} /> Settings
-          </Link>
-          <Link href="/help" className="user-menu__item" role="menuitem" onClick={() => setOpen(false)}>
+          </NavLink>
+          <NavLink href="/help" className="user-menu__item" role="menuitem" onClick={() => setOpen(false)}>
             <NavHelp size={16} /> Help & support
-          </Link>
+          </NavLink>
           {isAdmin && (
             <>
               <div className="user-menu__sep" />
-              <Link href="/admin" className="user-menu__item" role="menuitem" onClick={() => setOpen(false)}>
+              <NavLink href="/admin" className="user-menu__item" role="menuitem" onClick={() => setOpen(false)}>
                 <NavShield size={16} /> Admin console
-              </Link>
+              </NavLink>
             </>
           )}
           <div className="user-menu__sep" />

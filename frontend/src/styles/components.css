@@ -772,6 +772,100 @@
   padding: 0 1.75rem 1.5rem;
 }
 
+/* ── Navigation pending indicator (top progress line — no spinner) ── */
+.nav-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 0%;
+  z-index: 9999;
+  background: var(--accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.nav-progress--active {
+  opacity: 1;
+  animation: nav-progress-fill 1.6s cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
+}
+@keyframes nav-progress-fill {
+  0%   { width: 0%; }
+  40%  { width: 60%; }
+  80%  { width: 85%; }
+  100% { width: 95%; }
+}
+/* While navigating, give a subtle cursor cue and softly dim clicked links. */
+body.is-navigating {
+  cursor: progress;
+}
+body.is-navigating a:active,
+body.is-navigating .app-sidebar__link:active,
+body.is-navigating .btn:active {
+  opacity: 0.65;
+}
+
+/* ── Floating detail popover ── */
+.floating-detail-trigger {
+  cursor: pointer;
+}
+.floating-detail-trigger:hover {
+  background: var(--bg-surface) !important;
+}
+.floating-detail-popover {
+  position: fixed;
+  z-index: 200;
+  transform: translate(12px, -50%);
+  pointer-events: auto;
+  min-width: 260px;
+  max-width: 380px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow-xl);
+  animation: floating-fade-in 0.15s ease;
+}
+@keyframes floating-fade-in {
+  from { opacity: 0; transform: translate(12px, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(12px, -50%) scale(1); }
+}
+.floating-detail-popover .fd-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+.floating-detail-popover .fd-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0;
+  font-size: 0.82rem;
+}
+.floating-detail-popover .fd-row + .fd-row {
+  border-top: 1px solid var(--border-color);
+}
+.floating-detail-popover .fd-label {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.floating-detail-popover .fd-value {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.floating-detail-popover .fd-note {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 /* Footer */
 .footer {
   border-top: 1px solid var(--border-color);

@@ -1,6 +1,6 @@
 'use client';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { NavLink } from '@/components/layout/NavLink';
 
 interface Tab { href: string; label: string }
 
@@ -15,7 +15,7 @@ export function WorkspaceTabs({ tabs }: { tabs: Tab[] }): JSX.Element {
   return (
     <nav style={{ display: 'flex', gap: '0.25rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem' }}>
       {tabs.map((t) => (
-        <Link
+        <NavLink
           key={t.href}
           href={t.href}
           className="btn btn--ghost"
@@ -27,7 +27,7 @@ export function WorkspaceTabs({ tabs }: { tabs: Tab[] }): JSX.Element {
           }}
         >
           {t.label}
-        </Link>
+        </NavLink>
       ))}
     </nav>
   );

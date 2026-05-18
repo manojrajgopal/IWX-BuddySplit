@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { IconPlus, NavCircles, IconReceipt, IconUsers } from './Icons';
+import { NavLink } from './NavLink';
 
 const OPTIONS = [
   { href: '/circles/new',         label: 'New circle',     hint: 'Start a new trip, household, or event.', icon: NavCircles },
@@ -38,13 +38,13 @@ export function CreateMenu(): JSX.Element {
           {OPTIONS.map((opt) => {
             const Icon = opt.icon;
             return (
-              <Link key={opt.label} href={opt.href} className="create-menu__item" role="menuitem" onClick={() => setOpen(false)}>
+              <NavLink key={opt.label} href={opt.href} className="create-menu__item" role="menuitem" onClick={() => setOpen(false)}>
                 <span className="create-menu__icon"><Icon size={18} /></span>
                 <span>
                   <div className="create-menu__label">{opt.label}</div>
                   <div className="create-menu__hint">{opt.hint}</div>
                 </span>
-              </Link>
+              </NavLink>
             );
           })}
         </div>

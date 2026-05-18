@@ -1,8 +1,8 @@
 'use client';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { NavHome, NavCircles, NavActivity, NavReports, NavFriends, NavBell, NavMail, NavSettings, NavShield, NavUser, NavHelp } from './Icons';
+import { NavLink } from './NavLink';
 
 export interface SidebarNavItem {
   href: string;
@@ -51,7 +51,7 @@ export function Sidebar({ groups, footer, open = false, onClose }: Props): JSX.E
               const Icon = ICONS[item.icon];
               const active = item.exact ? pathname === item.href : (pathname === item.href || pathname.startsWith(item.href + '/'));
               return (
-                <Link
+                <NavLink
                   key={item.href}
                   href={item.href}
                   onClick={onClose}
@@ -62,7 +62,7 @@ export function Sidebar({ groups, footer, open = false, onClose }: Props): JSX.E
                   {item.count !== undefined && item.count > 0 && (
                     <span className="app-sidebar__link-count">{item.count > 99 ? '99+' : item.count}</span>
                   )}
-                </Link>
+                </NavLink>
               );
             })}
           </div>
