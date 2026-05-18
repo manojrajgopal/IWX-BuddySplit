@@ -81,15 +81,21 @@ export default async function ReportsPage(): Promise<JSX.Element> {
           <div className="empty-state">No monthly data yet.</div>
         ) : (
           <div className="card">
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${data.byMonth.length}, 1fr)`, gap: '0.5rem', alignItems: 'end', height: 180 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(data.byMonth.length, 6)}, 1fr)`, gap: '0.75rem', alignItems: 'end', height: 180, padding: '0.5rem 0' }}>
               {data.byMonth.map((b) => {
-                const pct = Math.max(4, Math.round((Number(b.total) / maxMonth) * 100));
+                const pct = Math.max(8, Math.round((Number(b.total) / maxMonth) * 100));
+                const label = b.month.length === 7
+                  ? new Date(b.month + '-01').toLocaleString('en', { month: 'short', year: '2-digit' })
+                  : b.month;
                 return (
-                  <div key={b.month} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', height: '100%' }}>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'end', width: '100%' }}>
-                      <div style={{ width: '100%', background: 'var(--text-secondary)', borderRadius: '6px 6px 0 0', height: `${pct}%` }} />
+                  <div key={b.month} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', height: '100%' }}>
+                    <div className="text-mono" style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                      {formatMoney(b.total, data.currency)}
                     </div>
-                    <div className="text-mono" style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{b.month}</div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'end', width: '100%', maxWidth: 56 }}>
+                      <div style={{ width: '100%', background: 'var(--accent)', opacity: 0.7, borderRadius: '6px 6px 0 0', height: `${pct}%`, transition: 'height 0.3s ease' }} />
+                    </div>
+                    <div className="text-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{label}</div>
                   </div>
                 );
               })}

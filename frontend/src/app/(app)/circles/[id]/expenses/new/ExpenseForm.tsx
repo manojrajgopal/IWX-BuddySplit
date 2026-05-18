@@ -13,6 +13,7 @@ interface Props { workspaceId: string; currency: string; members: Member[] }
 export function ExpenseForm({ workspaceId, currency, members }: Props): JSX.Element {
   const router = useRouter();
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
   const [payerId, setPayerId] = useState(members[0]?.memberId ?? '');
   const [splitMode, setSplitMode] = useState<SplitMode>('equal');
@@ -75,6 +76,7 @@ export function ExpenseForm({ workspaceId, currency, members }: Props): JSX.Elem
         method: 'POST',
         body: {
           description,
+          category: category || null,
           amount: amountMinor,
           currency,
           payerMemberId: payerId,
@@ -94,6 +96,23 @@ export function ExpenseForm({ workspaceId, currency, members }: Props): JSX.Elem
     <form onSubmit={onSubmit} className="card" style={{ maxWidth: 720 }}>
       <div className="field"><label className="label">Description</label>
         <input className="input" required value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. Dinner at Meghana Foods" />
+      </div>
+
+      <div className="field"><label className="label">Category</label>
+        <select className="select" value={category} onChange={(e) => setCategory(e.target.value)}>
+          <option value="">Select a category</option>
+          <option value="Food & Dining">Food & Dining</option>
+          <option value="Transport">Transport</option>
+          <option value="Groceries">Groceries</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Shopping">Shopping</option>
+          <option value="Utilities">Utilities</option>
+          <option value="Rent & Housing">Rent & Housing</option>
+          <option value="Travel">Travel</option>
+          <option value="Health">Health</option>
+          <option value="Education">Education</option>
+          <option value="Other">Other</option>
+        </select>
       </div>
 
       <div className="field"><label className="label">Split mode</label>
