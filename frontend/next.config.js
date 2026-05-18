@@ -3,6 +3,10 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   typedRoutes: false,
+  // Hide the floating "N" Next.js dev indicator in the bottom-left corner.
+  // It only renders during `next dev`, but we disable it explicitly so it
+  // never appears in any environment.
+  devIndicators: false,
   async rewrites() {
     return [
       {

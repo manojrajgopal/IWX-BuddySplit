@@ -18,8 +18,15 @@ import { NotifyBus, NotifyMessage } from '@/core/database/notify.bus';
 @WebSocketGateway({
   path: process.env.SOCKET_PATH || '/realtime',
   cors: {
-    origin: (origin, cb) =>
-      cb(null, (process.env.CORS_ORIGINS ?? '').split(',').includes(origin ?? '') || true),
+    origin: (origin, cb) => {
+      const allowed = (process.env.CORS_ORIGINS ?? '')
+        .split(',').map((s) => s.trim()).filter(Boolean);
+      // Allow same-origin handshakes (no Origin header) and explicit wildcard.
+      if (!origin || allowed.includes('*') || allowed.includes(origin)) {
+        return cb(null, true);
+      }
+      return cb(new Error(`WS origin ${origin} not allowed`), false);
+    },
     credentials: true,
   },
 })

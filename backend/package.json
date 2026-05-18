@@ -7,6 +7,7 @@
   "scripts": {
     "build": "nest build",
     "start": "node dist/main.js",
+    "start:prod": "node dist/main.js",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "lint": "eslint \"src/**/*.ts\" --fix",
@@ -15,8 +16,10 @@
     "test:cov": "jest --coverage",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
+    "migration:run:prod": "typeorm migration:run -d dist/database/data-source.js",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
-    "seed": "ts-node -r tsconfig-paths/register src/database/seeds/run.ts"
+    "seed": "ts-node -r tsconfig-paths/register src/database/seeds/run.ts",
+    "render:build": "npm ci && npm run build && npm run migration:run:prod"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.0",
