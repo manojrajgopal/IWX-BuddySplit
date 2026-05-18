@@ -59,10 +59,8 @@ export async function AuthShell({ children, variant = 'login' }: Props): Promise
         <div className="auth__panel-inner">
           <div className="auth__brand-row">
             <Link href="/" className="brand" aria-label={appName} style={{ margin: 0 }}>
-              {logo ? (
+              {logo && (
                 <img src={logo.url} alt={appName} width={28} height={28} style={{ borderRadius: 8 }} />
-              ) : (
-                <span className="brand__mark" />
               )}
               <span>{appName}</span>
             </Link>
