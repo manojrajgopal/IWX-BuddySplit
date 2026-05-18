@@ -7,6 +7,7 @@ import { Reveal } from '@/components/cms/Reveal';
 import { AnimatedCounter } from '@/components/cms/AnimatedCounter';
 import { TestimonialCarousel } from '@/components/cms/TestimonialCarousel';
 import { NewsletterForm } from '@/components/cms/NewsletterForm';
+import { MoneyJourneyAnimation } from '@/components/cms/MoneyJourneyAnimation';
 
 export const metadata = { title: 'Home' };
 
@@ -125,6 +126,17 @@ export default async function HomePage(): Promise<JSX.Element> {
             <div className="stat-tile__hint">Trips and groups you&apos;ve fully settled. Nice work.</div>
           </Link>
         </div>
+      </Reveal>
+
+      {/* ───── 30-second short film ───── */}
+      <Reveal as="section" className="home-section home-movie-section">
+        <span className="section-label">Watch · 30 seconds</span>
+        <h2 className="home-section__title">The story of every group trip — with &amp; without BuddySplit</h2>
+        <p className="home-section__lede">
+          Press play and watch the journey unfold: friends hit the road, expenses pile up, things get messy,
+          BuddySplit steps in, the math sorts itself out — and everyone ends up smiling. A tiny film, a big idea.
+        </p>
+        <MoneyJourneyAnimation />
       </Reveal>
 
       {/* ───── Your circles ───── */}
