@@ -10,6 +10,7 @@ import { otpTemplates } from './otp.template';
 import { inviteTemplate } from './invite.template';
 import { expenseCreatedTemplate } from './expense-created.template';
 import { memberJoinedTemplate } from './member-joined.template';
+import { newsletterWelcomeTemplate } from './newsletter-welcome.template';
 
 export interface BuiltInTemplate {
   subject: string;
@@ -24,6 +25,7 @@ export const builtInTemplates: Record<string, BuiltInTemplate> = {
   'invite.sent':             inviteTemplate,
   'expense.created':         expenseCreatedTemplate,
   'member.joined':           memberJoinedTemplate,
+  'newsletter.welcome':      newsletterWelcomeTemplate,
 };
 
 export function getBuiltInTemplate(key: string): BuiltInTemplate | null {

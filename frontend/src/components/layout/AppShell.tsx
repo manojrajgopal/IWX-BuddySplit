@@ -11,7 +11,7 @@ function buildGroups(isAdmin: boolean, unread: number): SidebarGroup[] {
     {
       title: 'Explore',
       items: [
-        { href: '/dashboard',     label: 'Dashboard',     icon: 'home',     exact: true },
+        { href: '/dashboard',     label: 'Home',          icon: 'home',     exact: true },
         { href: '/circles',       label: 'Circles',       icon: 'circles' },
         { href: '/activity',      label: 'Activity',      icon: 'activity' },
         { href: '/reports',       label: 'Reports',       icon: 'reports' },
@@ -88,15 +88,49 @@ export async function AppShell({ children }: { children: ReactNode }): Promise<J
   ) : null;
 
   const footer = (
-    <>
-      <span>© {new Date().getFullYear()} {companyName}. All rights reserved.</span>
-      <div className="app-main__footer-links">
-        <Link href="/about">About</Link>
-        <Link href="/privacy">Privacy</Link>
-        <Link href="/terms">Terms</Link>
-        <Link href="/help">Help</Link>
+    <div className="app-footer-rich">
+      <div className="app-footer-rich__grid">
+        <div className="app-footer-rich__col app-footer-rich__col--brand">
+          <div className="app-footer-rich__brand">
+            {logoUrl ? <img src={logoUrl} alt={appName} className="app-footer-rich__logo" /> : null}
+            <strong>{appName}</strong>
+          </div>
+          <p className="app-footer-rich__tagline">{tagline}. Split bills, track balances, settle smart — together.</p>
+          <div className="app-footer-rich__socials" aria-label="Follow us">
+            <a href="https://twitter.com" target="_blank" rel="noreferrer noopener" aria-label="Twitter">𝕏</a>
+            <a href="https://instagram.com" target="_blank" rel="noreferrer noopener" aria-label="Instagram">IG</a>
+            <a href="https://linkedin.com" target="_blank" rel="noreferrer noopener" aria-label="LinkedIn">in</a>
+            <a href="https://github.com" target="_blank" rel="noreferrer noopener" aria-label="GitHub">GH</a>
+          </div>
+        </div>
+        <div className="app-footer-rich__col">
+          <h6 className="app-footer-rich__title">Product</h6>
+          <Link href="/dashboard">Home</Link>
+          <Link href="/circles">Circles</Link>
+          <Link href="/activity">Activity</Link>
+          <Link href="/reports">Reports</Link>
+          <Link href="/friends">Friends</Link>
+        </div>
+        <div className="app-footer-rich__col">
+          <h6 className="app-footer-rich__title">Account</h6>
+          <Link href="/profile">Profile</Link>
+          <Link href="/settings">Settings</Link>
+          <Link href="/notifications">Notifications</Link>
+          <Link href="/invitations">Invitations</Link>
+        </div>
+        <div className="app-footer-rich__col">
+          <h6 className="app-footer-rich__title">Company</h6>
+          <Link href="/about">About</Link>
+          <Link href="/help">Help center</Link>
+          <Link href="/privacy">Privacy policy</Link>
+          <Link href="/terms">Terms of service</Link>
+        </div>
       </div>
-    </>
+      <div className="app-footer-rich__bar">
+        <span>© {new Date().getFullYear()} {companyName}. All rights reserved.</span>
+        <span className="app-footer-rich__build">Made with care · v1.0</span>
+      </div>
+    </div>
   );
 
   return (

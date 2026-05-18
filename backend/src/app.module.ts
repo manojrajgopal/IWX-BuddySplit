@@ -24,6 +24,7 @@ import { NavigationModule } from './modules/navigation/navigation.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { NewsletterModule } from './modules/newsletter/newsletter.module';
 
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -34,6 +35,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     UsersModule, OtpModule, AuthModule, InvitationsModule, WorkspacesModule, MembersModule,
     ExpensesModule, SettlementsModule, NotificationsModule, EmailModule,
     SettingsModule, BrandingModule, NavigationModule, AdminModule, RolesModule, ReportsModule,
+    NewsletterModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
