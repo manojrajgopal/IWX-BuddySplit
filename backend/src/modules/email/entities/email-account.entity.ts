@@ -3,7 +3,7 @@ import {
   PrimaryGeneratedColumn, UpdateDateColumn,
 } from 'typeorm';
 
-export type EmailProvider = 'smtp' | 'gmail_oauth';
+export type EmailProvider = 'smtp' | 'gmail_oauth' | 'resend';
 
 @Entity({ name: 'email_accounts' })
 export class EmailAccountEntity {

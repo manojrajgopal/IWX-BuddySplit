@@ -1,7 +1,7 @@
 import {
   forwardRef, Inject, Injectable, Logger, NotFoundException,
 } from '@nestjs/common';
-import { createTransport, Transporter } from 'nodemailer';
+import { createTransport } from 'nodemailer';
 import Handlebars from 'handlebars';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,10 +21,20 @@ interface SendOptions {
   accountId?: string;
 }
 
+interface OutgoingMessage {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}
+
 interface ResolvedAccount {
   entity: EmailAccountEntity;
-  transporter: Transporter;
   from: string;
+  /** Short human label of the underlying transport, surfaced in error logs. */
+  transportLabel: string;
+  send: (msg: OutgoingMessage) => Promise<void>;
 }
 
 @Injectable()
@@ -87,7 +97,7 @@ export class MailService {
     }
 
     try {
-      await resolved.transporter.sendMail({
+      await resolved.send({
         from: resolved.from,
         to: Array.isArray(opts.to) ? opts.to.join(',') : opts.to,
         subject, html, text,
@@ -96,11 +106,9 @@ export class MailService {
       this.logger.log(`sent[${opts.templateKey}] via ${resolved.entity.name} → ${opts.to}`);
     } catch (err) {
       const message = (err as Error).message;
-      const transportOpts = (resolved.transporter as unknown as { options?: { host?: string; port?: number } }).options ?? {};
-      const where = transportOpts.host ? ` (host=${transportOpts.host}:${transportOpts.port ?? '?'})` : '';
       await this.accounts.recordSend(resolved.entity.id, message);
       this.cache.delete(resolved.entity.id);
-      this.logger.error(`send[${opts.templateKey}] failed via ${resolved.entity.name}${where}: ${message}`);
+      this.logger.error(`send[${opts.templateKey}] failed via ${resolved.entity.name} (${resolved.transportLabel}): ${message}`);
       throw err;
     }
   }
@@ -123,7 +131,7 @@ export class MailService {
     }
     if (!target) throw new NotFoundException('Email account not resolvable');
     try {
-      await target.transporter.sendMail({
+      await target.send({
         from: target.from,
         to,
         subject: 'IWX BuddySplit · email account test',
@@ -164,7 +172,6 @@ export class MailService {
     entity: EmailAccountEntity,
     config: Record<string, unknown>,
   ): Promise<ResolvedAccount> {
-    let transporter: Transporter;
     // Render (and most managed hosts) sometimes have unreliable IPv6 routing to
     // SMTP relays; forcing IPv4 plus explicit timeouts avoids indefinite hangs
     // surfacing as "Connection timeout" with no further context.
@@ -174,6 +181,39 @@ export class MailService {
       greetingTimeout: 15_000,
       socketTimeout: 30_000,
     };
+
+    if (entity.provider === 'resend') {
+      // Resend uses an HTTPS API (https://api.resend.com/emails) — works on
+      // hosts like Render's free tier that block all outbound SMTP traffic.
+      const apiKey = String(config.apiKey ?? '').trim();
+      if (!apiKey) throw new Error('Resend account is missing apiKey');
+      return {
+        entity,
+        from: entity.fromAddress,
+        transportLabel: 'resend:https',
+        send: async (msg) => {
+          const res = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: msg.from,
+              to: msg.to.split(',').map((s) => s.trim()).filter(Boolean),
+              subject: msg.subject,
+              html: msg.html,
+              text: msg.text,
+            }),
+          });
+          if (!res.ok) {
+            const body = await res.text().catch(() => '');
+            throw new Error(`Resend API ${res.status}: ${body.slice(0, 500)}`);
+          }
+        },
+      };
+    }
+
     if (entity.provider === 'smtp') {
       const host = String(config.host ?? '').trim();
       const rawPort = Number(config.port ?? 587);
@@ -184,7 +224,7 @@ export class MailService {
       const secure = port === 465 ? true : Boolean(config.secure) && port !== 587 && port !== 2525 && port !== 25;
       const user = String(config.user ?? '');
       const pass = String(config.password ?? '');
-      transporter = createTransport({
+      const transporter = createTransport({
         host,
         port,
         secure,
@@ -193,22 +233,34 @@ export class MailService {
         tls: { servername: host },
         ...commonOpts,
       });
-    } else {
-      const user = extractEmail(entity.fromAddress);
-      transporter = createTransport({
-        service: 'gmail',
-        auth: {
-          type: 'OAuth2',
-          user,
-          clientId: String(config.clientId ?? ''),
-          clientSecret: String(config.clientSecret ?? ''),
-          refreshToken: String(config.refreshToken ?? ''),
-          accessToken: String(config.accessToken ?? '') || undefined,
-        },
-        ...commonOpts,
-      });
+      return {
+        entity,
+        from: entity.fromAddress,
+        transportLabel: `smtp:${host}:${port}`,
+        send: async (msg) => { await transporter.sendMail(msg); },
+      };
     }
-    return { entity, transporter, from: entity.fromAddress };
+
+    // gmail_oauth
+    const user = extractEmail(entity.fromAddress);
+    const transporter = createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user,
+        clientId: String(config.clientId ?? ''),
+        clientSecret: String(config.clientSecret ?? ''),
+        refreshToken: String(config.refreshToken ?? ''),
+        accessToken: String(config.accessToken ?? '') || undefined,
+      },
+      ...commonOpts,
+    });
+    return {
+      entity,
+      from: entity.fromAddress,
+      transportLabel: 'gmail-oauth:smtp.gmail.com:465',
+      send: async (msg) => { await transporter.sendMail(msg); },
+    };
   }
 }
 

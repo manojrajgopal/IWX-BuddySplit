@@ -5,7 +5,7 @@ import { CryptoService } from '@/core/crypto/crypto.service';
 import { EmailAccountEntity } from './entities/email-account.entity';
 import {
   EmailAccountCreateDto, EmailAccountUpdateDto,
-  smtpConfigSchema, gmailOAuthConfigSchema,
+  smtpConfigSchema, gmailOAuthConfigSchema, resendConfigSchema,
 } from './dto/email-account.dto';
 
 /** Listener invoked whenever email accounts change so MailService can refresh. */
@@ -14,7 +14,7 @@ export type EmailAccountChangeListener = () => void;
 export interface EmailAccountPublic {
   id: string;
   name: string;
-  provider: 'smtp' | 'gmail_oauth';
+  provider: 'smtp' | 'gmail_oauth' | 'resend';
   fromAddress: string;
   isActive: boolean;
   isDefault: boolean;
@@ -151,8 +151,11 @@ export class EmailAccountsService {
     await this.repo.update({ id }, { lastUsedAt: new Date(), lastError: error });
   }
 
-  private validateConfig(provider: 'smtp' | 'gmail_oauth', cfg: unknown): Record<string, unknown> {
-    const schema = provider === 'smtp' ? smtpConfigSchema : gmailOAuthConfigSchema;
+  private validateConfig(provider: 'smtp' | 'gmail_oauth' | 'resend', cfg: unknown): Record<string, unknown> {
+    const schema =
+      provider === 'smtp' ? smtpConfigSchema
+        : provider === 'gmail_oauth' ? gmailOAuthConfigSchema
+          : resendConfigSchema;
     const parsed = schema.safeParse(cfg);
     if (!parsed.success) {
       throw new BadRequestException({
@@ -182,7 +185,7 @@ export class EmailAccountsService {
 }
 
 function maskConfig(
-  provider: 'smtp' | 'gmail_oauth',
+  provider: 'smtp' | 'gmail_oauth' | 'resend',
   cfg: Record<string, unknown>,
 ): Record<string, string | number | boolean> {
   const out: Record<string, string | number | boolean> = {};
@@ -198,12 +201,15 @@ function maskConfig(
     out.secure = Boolean(cfg.secure);
     out.user = String(cfg.user ?? '');
     out.password = mask(cfg.password);
-  } else {
+  } else if (provider === 'gmail_oauth') {
     out.clientId = String(cfg.clientId ?? '');
     out.clientSecret = mask(cfg.clientSecret);
     out.redirectUri = String(cfg.redirectUri ?? '');
     out.refreshToken = mask(cfg.refreshToken);
     out.accessToken = mask(cfg.accessToken);
+  } else {
+    // resend
+    out.apiKey = mask(cfg.apiKey);
   }
   return out;
 }

@@ -7,7 +7,7 @@ import { apiClient } from '@/lib/api/client';
 export interface EmailAccount {
   id: string;
   name: string;
-  provider: 'smtp' | 'gmail_oauth';
+  provider: 'smtp' | 'gmail_oauth' | 'resend';
   fromAddress: string;
   isActive: boolean;
   isDefault: boolean;
@@ -25,15 +25,17 @@ type GmailForm = {
   clientId: string; clientSecret: string; redirectUri: string;
   refreshToken: string; accessToken: string;
 };
+type ResendForm = { apiKey: string };
 type FormState = {
   id?: string;
   name: string;
-  provider: 'smtp' | 'gmail_oauth';
+  provider: 'smtp' | 'gmail_oauth' | 'resend';
   fromAddress: string;
   isActive: boolean;
   isDefault: boolean;
   smtp: SmtpForm;
   gmail: GmailForm;
+  resend: ResendForm;
 };
 
 const EMPTY: FormState = {
@@ -44,6 +46,7 @@ const EMPTY: FormState = {
   isDefault: false,
   smtp: { host: 'localhost', port: 1025, secure: false, user: '', password: '' },
   gmail: { clientId: '', clientSecret: '', redirectUri: '', refreshToken: '', accessToken: '' },
+  resend: { apiKey: '' },
 };
 
 export function EmailAccountsClient({ initial }: { initial: EmailAccount[] }): JSX.Element {
@@ -97,6 +100,7 @@ export function EmailAccountsClient({ initial }: { initial: EmailAccount[] }): J
         refreshToken: '',
         accessToken: '',
       } : EMPTY.gmail,
+      resend: acc.provider === 'resend' ? { apiKey: '' } : EMPTY.resend,
     });
   }
 
@@ -110,7 +114,10 @@ export function EmailAccountsClient({ initial }: { initial: EmailAccount[] }): J
       fromAddress: form.fromAddress,
       isActive: form.isActive,
       isDefault: form.isDefault,
-      config: form.provider === 'smtp' ? form.smtp : form.gmail,
+      config:
+        form.provider === 'smtp' ? form.smtp
+          : form.provider === 'gmail_oauth' ? form.gmail
+            : form.resend,
     };
     try {
       if (editing && form.id) {
@@ -174,7 +181,7 @@ export function EmailAccountsClient({ initial }: { initial: EmailAccount[] }): J
                   <div>
                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                       <strong>{a.name}</strong>
-                      <span className="text-uppercase-label">{a.provider === 'smtp' ? 'SMTP' : 'Gmail OAuth'}</span>
+                      <span className="text-uppercase-label">{a.provider === 'smtp' ? 'SMTP' : a.provider === 'gmail_oauth' ? 'Gmail OAuth' : 'Resend'}</span>
                       {a.isDefault && <span className="text-uppercase-label" style={{ color: 'var(--color-success, #16a34a)' }}>Default</span>}
                       {!a.isActive && <span className="text-uppercase-label" style={{ color: 'var(--color-warning, #d97706)' }}>Inactive</span>}
                     </div>
@@ -223,9 +230,10 @@ export function EmailAccountsClient({ initial }: { initial: EmailAccount[] }): J
           <label className="field">
             <span>Provider</span>
             <select className="input" value={form.provider}
-              onChange={(e) => setForm({ ...form, provider: e.target.value as 'smtp' | 'gmail_oauth' })}>
+              onChange={(e) => setForm({ ...form, provider: e.target.value as 'smtp' | 'gmail_oauth' | 'resend' })}>
               <option value="smtp">SMTP (host / port / user / password)</option>
               <option value="gmail_oauth">Gmail OAuth2 (client / refresh token)</option>
+              <option value="resend">Resend (HTTPS API — works on Render free tier)</option>
             </select>
           </label>
 
@@ -278,6 +286,19 @@ export function EmailAccountsClient({ initial }: { initial: EmailAccount[] }): J
               <label className="field"><span>GOOGLE_ACCESS_TOKEN <em className="text-secondary">(optional)</em></span>
                 <input className="input" type="password" value={form.gmail.accessToken}
                   onChange={(e) => setForm({ ...form, gmail: { ...form.gmail, accessToken: e.target.value } })} />
+              </label>
+            </fieldset>
+          )}
+
+          {form.provider === 'resend' && (
+            <fieldset style={{ border: '1px solid var(--color-border, #e5e7eb)', padding: '0.75rem', borderRadius: 8 }}>
+              <legend className="text-uppercase-label">Resend credentials</legend>
+              <p className="text-secondary" style={{ fontSize: '0.8rem', marginTop: 0 }}>
+                Create an API key at <code>resend.com/api-keys</code> and verify your sending domain. The <strong>From address</strong> above must use that domain (or use <code>onboarding@resend.dev</code> for testing).
+              </p>
+              <label className="field"><span>RESEND_API_KEY {editing && <em className="text-secondary">(leave blank to keep)</em>}</span>
+                <input className="input" type="password" placeholder="re_..." value={form.resend.apiKey}
+                  onChange={(e) => setForm({ ...form, resend: { ...form.resend, apiKey: e.target.value } })} />
               </label>
             </fieldset>
           )}
