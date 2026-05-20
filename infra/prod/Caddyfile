@@ -1,0 +1,29 @@
+# ─────────────────────────────────────────────────────────────
+# Caddyfile — automatic HTTPS via Let's Encrypt
+#
+# Replace the two domains below with YOUR real domains, then:
+#   docker compose -f docker-compose.prod.yml restart caddy
+#
+# DNS pre-req: both A records must point to this EC2's Elastic IP
+# BEFORE the first `up`, otherwise Let's Encrypt validation fails.
+# ─────────────────────────────────────────────────────────────
+
+# Frontend (Next.js)
+app.example.com {
+    encode zstd gzip
+    reverse_proxy frontend:3000
+}
+
+# Backend API + WebSockets
+api.example.com {
+    encode zstd gzip
+
+    # Socket.IO needs websocket upgrade — Caddy handles this automatically
+    # for reverse_proxy, but we set sane timeouts for long-lived connections.
+    reverse_proxy backend:4000 {
+        transport http {
+            read_timeout 1h
+            write_timeout 1h
+        }
+    }
+}

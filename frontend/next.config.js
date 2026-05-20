@@ -3,6 +3,9 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   typedRoutes: false,
+  // Produce a self-contained server bundle in `.next/standalone` for Docker.
+  // Harmless in dev; required by frontend/Dockerfile.
+  output: 'standalone',
   // Hide the floating "N" Next.js dev indicator in the bottom-left corner.
   // It only renders during `next dev`, but we disable it explicitly so it
   // never appears in any environment.

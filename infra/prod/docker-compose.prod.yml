@@ -1,0 +1,69 @@
+# ─────────────────────────────────────────────────────────────
+# IWX BuddySplit — Production stack (single EC2 box)
+#
+# Runs on one Ubuntu EC2 instance:
+#   • caddy     → reverse proxy + automatic HTTPS (Let's Encrypt)
+#   • backend   → NestJS API + Socket.IO   (internal :4000)
+#   • frontend  → Next.js standalone       (internal :3000)
+#
+# Postgres is NOT here — use Amazon RDS (managed, backed up).
+# SMTP is NOT here — use Amazon SES (cheap, deliverable).
+#
+# Bring up:   docker compose -f docker-compose.prod.yml up -d --build
+# Logs:       docker compose -f docker-compose.prod.yml logs -f
+# Update:     git pull && docker compose -f docker-compose.prod.yml up -d --build
+# ─────────────────────────────────────────────────────────────
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    image: iwx-bs-backend:latest
+    container_name: iwx-bs-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend.env
+    expose:
+      - "4000"
+    networks: [web]
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_WS_URL:  ${NEXT_PUBLIC_WS_URL}
+        NEXT_PUBLIC_WS_PATH: /realtime
+    image: iwx-bs-frontend:latest
+    container_name: iwx-bs-frontend
+    restart: unless-stopped
+    env_file:
+      - ./frontend.env
+    expose:
+      - "3000"
+    depends_on: [backend]
+    networks: [web]
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: iwx-bs-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [frontend, backend]
+    networks: [web]
+
+networks:
+  web:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
